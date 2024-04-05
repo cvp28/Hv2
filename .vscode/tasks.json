@@ -1,0 +1,41 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build debug",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"msbuild",
+				"${workspaceFolder}\\H2.sln",
+				"-property:GenerateFullPaths=true",
+				"-property:Configuration=Debug",
+				"-maxCpuCount",
+				"-consoleloggerparameters:Summary;ForceNoAlign"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "build release",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"msbuild",
+				"${workspaceFolder}\\H2.sln",
+				"-property:GenerateFullPaths=true",
+				"-property:Configuration=Release",
+				"-maxCpuCount",
+				"-consoleloggerparameters:Summary;ForceNoAlign"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		}
+	]
+}
