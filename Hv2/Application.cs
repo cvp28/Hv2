@@ -2,7 +2,7 @@
 
 using Cosmo;
 
-namespace H2;
+namespace Hv2;
 
 public class Application
 {
