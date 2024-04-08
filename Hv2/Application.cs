@@ -41,6 +41,7 @@ public class Application
 	/// </summary>
 	public void Run()
 	{
+		Running = true;
 		FrameTimer.Start();
 		
 		while (Running)
