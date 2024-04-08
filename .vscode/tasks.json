@@ -7,7 +7,7 @@
 			"type": "process",
 			"args": [
 				"msbuild",
-				"${workspaceFolder}\\H2.sln",
+				"${workspaceFolder}\\Hv2.sln",
 				"-property:GenerateFullPaths=true",
 				"-property:Configuration=Debug",
 				"-maxCpuCount",
@@ -25,7 +25,7 @@
 			"type": "process",
 			"args": [
 				"msbuild",
-				"${workspaceFolder}\\H2.sln",
+				"${workspaceFolder}\\Hv2.sln",
 				"-property:GenerateFullPaths=true",
 				"-property:Configuration=Release",
 				"-maxCpuCount",
