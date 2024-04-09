@@ -13,9 +13,8 @@ public class Application
 	private bool Running = false;
 	
 	private System.Timers.Timer FrameTimer;
-	private int LastFPS;
-	public int CurrentFPS { get; private set; }
-	
+	public  int LastFPS { get; private set; }
+	private int CurrentFPS;
 	
 	public Application()
 	{
