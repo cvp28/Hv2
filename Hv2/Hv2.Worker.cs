@@ -12,16 +12,9 @@ public static partial class Hv2
 	{
 		while (Running)
 		{
-			HandleInput();
-			
-		}
-	}
-	
-	private static void HandleInput()
-	{
-		if (Console.KeyAvailable)
-		{
-			InputBuffer.Enqueue(Console.ReadKey(true));
+			if (Console.KeyAvailable)
+				InputBuffer.Enqueue(Console.ReadKey(true));
+
 		}
 	}
 }

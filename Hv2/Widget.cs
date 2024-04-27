@@ -12,4 +12,6 @@ public abstract class Widget
 	public virtual int ComputeVisHash() => 0;
 	
 	public virtual void Draw(Renderer r) { }
+
+	public virtual void OnInput(ConsoleKeyInfo cki) { }
 }

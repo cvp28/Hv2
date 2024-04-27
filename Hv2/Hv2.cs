@@ -8,11 +8,15 @@ namespace Hv2;
 public static partial class Hv2
 {
 	private static Renderer CosmoRenderer;
-	
 	private static PooledList<Layer> LayerStack;
-	
+
+	private static PooledSet<int> LastFrameHashes;
+	private static PooledSet<int> NextFrameHashes;
+
 	public static Widget FocusedWidget;
-	
+
+	public static PooledDictionary<ConsoleKeyInfo, Action> GlobalKeyActions;
+
 	private static bool Running = false;
 	
 	private static System.Timers.Timer FPSIntervalTimer;
@@ -27,9 +31,12 @@ public static partial class Hv2
 			throw new Exception("Hv2 is already initialized.");
 		
 		CosmoRenderer = new();
-		
 		LayerStack = new();
-		
+		GlobalKeyActions = new();
+
+		LastFrameHashes = new(ClearMode.Never);
+		NextFrameHashes = new(ClearMode.Never);
+
 		FPSIntervalTimer = new() { Interval = 1000 };
 		FPSIntervalTimer.Elapsed += (obj, args) => 
 		{
@@ -52,15 +59,22 @@ public static partial class Hv2
 		while (Running)
 		{
 			// Do input
+			HandleInput();
 			
-			
+			// Do rendering
 			RenderLayers(LayerStack);
-			
-			
 		}
 	}
 	
-	
+	private static void HandleInput()
+	{
+		if (!InputBuffer.Any())
+			return;
+
+		InputBuffer.TryDequeue(out var cki);
+
+		FocusedWidget.OnInput(cki);
+	}
 	
 	private static void RenderLayers(IEnumerable<Layer> Layers)
 	{
@@ -68,9 +82,26 @@ public static partial class Hv2
 		{
 			foreach (var w in l.Widgets)
 			{
-				w.Draw(CosmoRenderer);
+				var VisHash = w.ComputeVisHash();
+
+				if (VisHash == 0)
+				{
+					w.Draw(CosmoRenderer);
+					continue;
+				}
+
+				if (!LastFrameHashes.Contains(VisHash))
+					w.Draw(CosmoRenderer);
+
+				NextFrameHashes.Add(VisHash);
 			}
 		}
+
+		// Shift hashes back
+		LastFrameHashes.Clear();
+		foreach (var h in NextFrameHashes) LastFrameHashes.Add(h);
+
+		NextFrameHashes.Clear();
 	}
 	
 	/// <summary>
