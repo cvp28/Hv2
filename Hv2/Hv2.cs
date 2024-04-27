@@ -37,6 +37,8 @@ public static partial class Hv2
 		LastFrameHashes = new(ClearMode.Never);
 		NextFrameHashes = new(ClearMode.Never);
 
+		Hv2Worker = new(Hv2WorkerProc);
+
 		FPSIntervalTimer = new() { Interval = 1000 };
 		FPSIntervalTimer.Elapsed += (obj, args) => 
 		{
@@ -113,7 +115,11 @@ public static partial class Hv2
 		
 		Running = true;
 		FPSIntervalTimer.Start();
-		
+
+		// Start background worker thread
+		Hv2Worker.Start();
+
+		// Start mainloop
 		MainLoop();
 	}
 	
