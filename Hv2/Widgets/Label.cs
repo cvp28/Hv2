@@ -1,6 +1,6 @@
 ﻿using Cosmo;
 
-namespace Hv2;
+namespace Hv2UI;
 
 public class Label : Widget
 {
@@ -13,22 +13,21 @@ public class Label : Widget
 	public Color24 Background { get; set; }
 	
 	public StyleCode Style { get; set; }
-	
+
 	#region Constructors
-	public Label() => Make(0, 0, "", Color24.White, Color24.Black, StyleCode.None);
-	public Label(int X, int Y, string Text) => Make(X, Y, Text, Color24.White, Color24.Black, StyleCode.None);
-	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background) => Make(X, Y, Text, Foreground, Background, StyleCode.None);
-	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background, StyleCode Style) => Make(X, Y, Text, Foreground, Background, Style);
-	
-	private Label Make(int X, int Y, string Text, Color24 Foreground, Color24 Background, StyleCode Style) => new()
+	public Label() : this(0, 0, "", Color24.White, Color24.Black, StyleCode.None) { }
+	public Label(int X, int Y, string Text) : this(X, Y, Text, Color24.White, Color24.Black, StyleCode.None) { }
+	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background) : this(X, Y, Text, Foreground, Background, StyleCode.None) { }
+
+	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background, StyleCode Style)
 	{
-		X = X,
-		Y = Y,
-		Text = Text,
-		Foreground = Foreground,
-		Background = Background,
-		Style = Style
-	};
+		this.X = X;
+		this.Y = Y;
+		this.Text = Text;
+		this.Foreground = Foreground;
+		this.Background = Background;
+		this.Style = Style;
+	}
 	#endregion
 	
 	// This just computes a hash accounting for every property that affects visual appearance (which happens to be all of them)

@@ -1,12 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Collections.Pooled;
 
+using Collections.Pooled;
 using Cosmo;
 
-namespace Hv2;
+namespace Hv2UI;
 
 public static partial class Hv2
 {
+	public static int WindowWidth { get; private set; }
+	public static int WindowHeight { get; private set; }
+
 	private static Renderer CosmoRenderer;
 	private static PooledList<Layer> LayerStack;
 
@@ -34,6 +37,8 @@ public static partial class Hv2
 		LayerStack = new();
 		GlobalKeyActions = new();
 
+		InputBuffer = new();
+
 		LastFrameHashes = new(ClearMode.Never);
 		NextFrameHashes = new(ClearMode.Never);
 
@@ -44,12 +49,23 @@ public static partial class Hv2
 		{
 			LastFPS = CurrentFPS;
 			CurrentFPS = 0;
+			Console.Title = $"LastFPS: {LastFPS}";
 		};
 		
 		LastFPS = 0;
 		CurrentFPS = 0;
+
+		Initialized = true;
 	}
-	
+
+	public static (int X, int Y) GetCoordsFromOffsetEx(int X, int Y, int Offset)
+	{
+		int NewX = (X + Offset) % WindowWidth;
+		int OffY = (X + Offset) / WindowWidth;
+
+		return (NewX, Y + OffY);
+	}
+
 	private static void ThrowIfNotInitialized()
 	{
 		if (!Initialized)
@@ -65,6 +81,8 @@ public static partial class Hv2
 			
 			// Do rendering
 			RenderLayers(LayerStack);
+
+			CurrentFPS++;
 		}
 	}
 	
@@ -75,35 +93,17 @@ public static partial class Hv2
 
 		InputBuffer.TryDequeue(out var cki);
 
-		FocusedWidget.OnInput(cki);
+		if (FocusedWidget is not null)
+			FocusedWidget.OnInput(cki);
 	}
 	
 	private static void RenderLayers(IEnumerable<Layer> Layers)
 	{
 		foreach (var l in Layers)
-		{
 			foreach (var w in l.Widgets)
-			{
-				var VisHash = w.ComputeVisHash();
+				w.Draw(CosmoRenderer);
 
-				if (VisHash == 0)
-				{
-					w.Draw(CosmoRenderer);
-					continue;
-				}
-
-				if (!LastFrameHashes.Contains(VisHash))
-					w.Draw(CosmoRenderer);
-
-				NextFrameHashes.Add(VisHash);
-			}
-		}
-
-		// Shift hashes back
-		LastFrameHashes.Clear();
-		foreach (var h in NextFrameHashes) LastFrameHashes.Add(h);
-
-		NextFrameHashes.Clear();
+		CosmoRenderer.Flush();
 	}
 	
 	/// <summary>
@@ -128,6 +128,7 @@ public static partial class Hv2
 	{
 		var l = Activator.CreateInstance<T>();
 		l.OnAttachInternal();
+		l.OnShow();
 		
 		LayerStack.Add(l);
 	}
@@ -136,6 +137,7 @@ public static partial class Hv2
 	{
 		var l = Activator.CreateInstance<T>();
 		l.OnAttachInternal();
+		l.OnShow();
 		
 		LayerStack.Insert(0, l);
 	}
@@ -143,12 +145,16 @@ public static partial class Hv2
 	public static void RemoveLayerFront()
 	{
 		if (!LayerStack.Any()) return;
+
+		LayerStack[^1].OnHide();
 		LayerStack.RemoveAt(LayerStack.Count - 1);
 	}
 	
 	public static void RemoveLayerBack()
 	{
 		if (!LayerStack.Any()) return;
+
+		LayerStack[0].OnHide();
 		LayerStack.RemoveAt(0);
 	}
 	

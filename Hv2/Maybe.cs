@@ -1,6 +1,10 @@
 ﻿
-namespace Hv2;
+namespace Hv2UI;
 
+/// <summary>
+/// A simple option type intended for Hv2, but designed with general use in mind
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public struct Maybe<T>
 {
 	public T Result;

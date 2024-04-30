@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace Hv2;
+namespace Hv2UI;
 
 public static partial class Hv2
 {
@@ -15,6 +15,10 @@ public static partial class Hv2
 			if (Console.KeyAvailable)
 				InputBuffer.Enqueue(Console.ReadKey(true));
 
+			Console.CursorVisible = false;
+
+			WindowWidth = Console.WindowWidth;
+			WindowHeight = Console.WindowHeight;
 		}
 	}
 }

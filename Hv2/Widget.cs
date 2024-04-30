@@ -1,6 +1,6 @@
 ﻿using Cosmo;
 
-namespace Hv2;
+namespace Hv2UI;
 
 public abstract class Widget
 {
