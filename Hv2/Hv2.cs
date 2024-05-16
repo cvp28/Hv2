@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 using Collections.Pooled;
+
 using Cosmo;
 
 namespace Hv2UI;
@@ -13,12 +15,9 @@ public static partial class Hv2
 	private static Renderer CosmoRenderer;
 	private static PooledList<Layer> LayerStack;
 
-	private static PooledSet<int> LastFrameHashes;
-	private static PooledSet<int> NextFrameHashes;
-
 	public static Widget FocusedWidget;
 
-	public static PooledDictionary<ConsoleKeyInfo, Action> GlobalKeyActions;
+	public static PooledDictionary<ConsoleKey, Action> GlobalKeyActions;
 
 	private static bool Running = false;
 	
@@ -39,8 +38,7 @@ public static partial class Hv2
 
 		InputBuffer = new();
 
-		LastFrameHashes = new(ClearMode.Never);
-		NextFrameHashes = new(ClearMode.Never);
+		Console.OutputEncoding = Encoding.UTF8;
 
 		Hv2Worker = new(Hv2WorkerProc);
 
@@ -93,8 +91,16 @@ public static partial class Hv2
 
 		InputBuffer.TryDequeue(out var cki);
 
-		if (FocusedWidget is not null)
+		// Global KeyActions take precedence before focused widgets
+
+		if (GlobalKeyActions.TryGetValue(cki.Key, out var Action))
+		{
+			Action();
+		}
+		else if (FocusedWidget is not null)
+		{
 			FocusedWidget.OnInput(cki);
+		}
 	}
 	
 	private static void RenderLayers(IEnumerable<Layer> Layers)

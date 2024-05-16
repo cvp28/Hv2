@@ -19,6 +19,8 @@ public static partial class Hv2
 
 			WindowWidth = Console.WindowWidth;
 			WindowHeight = Console.WindowHeight;
+
+			Thread.Sleep(10);
 		}
 	}
 }
