@@ -1,17 +1,20 @@
-﻿using Cosmo;
+﻿using Collections.Pooled;
+using Cosmo;
 
 namespace Hv2UI;
 
-public abstract class Widget
+public abstract partial class Widget
 {
-	/// <summary>
-	/// <para>Hv2 uses this method to determine if a widget needs to be redrawn.</para>
-	/// <para>If this method returns a hash that does not match any stored from the previous mainloop iteration, then this widget's draw method is called.</para>
-	/// </summary>
-	/// <returns>A hash representing the current visual state of this widget</returns>
-	public virtual int ComputeVisHash() => 0;
-	
+	public bool Visible = true;
+
+	protected PooledDictionary<ConsoleKeyInfo, Action<ConsoleKeyInfo>> KeyActions = [];
+
 	public virtual void Draw(Renderer r) { }
 
-	public virtual void OnInput(ConsoleKeyInfo cki) { }
+	public virtual partial void OnInput(ConsoleKeyInfo cki);
+
+	public virtual partial void OnInput(ConsoleKeyInfo cki)
+	{
+		if (KeyActions.ContainsKey(cki)) KeyActions[cki](cki);
+	}
 }

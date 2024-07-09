@@ -11,6 +11,9 @@ public class ScrollableMenu : Widget
 	
 	// Called whenever the user selects an action
 	public Action<int, string> OnSubmit;
+
+	private Task<MenuOption> SubmitTask = null;
+	private MenuOption SubmitResult = null;
 	
 	private int ScrollY = 0; // Index that tracks where in the menu we have scrolled to
 	private int ScrollYMax => Options.Count <= Height ? 0 : Options.Count - Height;
@@ -97,6 +100,26 @@ public class ScrollableMenu : Widget
 			
 			r.WriteAt(X, Y + Height - 1, "↓");
 		}
+	}
+
+	public async Task<MenuOption> GetResultAsync()
+    {
+		if (SubmitTask is not null)
+			return null;
+
+		SubmitTask = Task.Run(delegate
+        {
+            while (SubmitResult is null) Thread.Sleep(50);
+
+            var temp = SubmitResult;
+
+            SubmitResult = null;
+            SubmitTask = null;
+
+			return temp;
+        });
+
+		return await SubmitTask;
 	}
 	
 	void DrawLeftAligned(Renderer r)
@@ -207,7 +230,9 @@ public class ScrollableMenu : Widget
 			
 			case ConsoleKey.Enter:
 				this[SelectedOption].Action();
+
 				if (OnSubmit is not null) OnSubmit(SelectedOption, this[SelectedOption].Text);
+				if (SubmitTask is not null) SubmitResult = this[SelectedOption];
 				break;
 		}
 	}

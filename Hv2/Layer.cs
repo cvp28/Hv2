@@ -27,8 +27,9 @@ public abstract partial class Layer
 		
 		OnAttach();
 	}
-	
-	public abstract void OnAttach();
+
+	public virtual void OnAttach()
+	{ }
 	
 	public virtual void OnShow()
 	{ }

@@ -30,9 +30,6 @@ public class Label : Widget
 	}
 	#endregion
 	
-	// This just computes a hash accounting for every property that affects visual appearance (which happens to be all of them)
-	public override int ComputeVisHash() => HashCode.Combine(X, Y, Text, Foreground, Background, Style);
-
 	public override void Draw(Renderer r)
 	{
 		r.WriteAt(X, Y, Text, Foreground, Background, Style);

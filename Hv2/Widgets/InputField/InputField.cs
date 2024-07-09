@@ -105,7 +105,7 @@ public partial class InputField : Widget
 		// Draw buffer using tokens from tokenizer
 		foreach (var Token in CurrentTokens)
 		{
-			var (TokenX, TokenY) = Hv2.GetCoordsFromOffsetEx(Token.StartIndex, X + Prompt.Length, Y);
+			var (TokenX, TokenY) = Hv2.GetCoordsFromOffsetEx(X + Prompt.Length, Y, Token.StartIndex);
 			r.WriteAt(TokenX, TokenY, Token.RawContent, Token.HighlightForeground, Token.HighlightBackground, StyleCode.None);
 		}
 
@@ -415,6 +415,9 @@ public partial class InputField : Widget
 
 			OnInputReady?.Invoke(Result);
 
+			if (ReadLineTask is not null)
+				ReadLineResult = Result;
+
 			if (Result.Length > 0 && HistoryEnabled)
 				History.Add(Result);
 
@@ -468,6 +471,33 @@ public partial class InputField : Widget
 		// Perform syntax highlighting via user-set rules if enabled
 		if (HighlightingEnabled && OnHighlight is not null)
 			OnHighlight(CurrentTokens);
+	}
+
+	private Task<string> ReadLineTask = null;
+	private string ReadLineResult = string.Empty;
+
+	public async Task<string> ReadLineAsync()
+	{
+		// Only allows one thread to wait at a time for a result
+		// All other threads will immediately get an empty string if another thread is waiting
+		if (ReadLineTask is not null)
+			return string.Empty;
+
+		ReadLineTask = Task.Run(delegate
+		{
+			// Simply check 20 times a second for a result to come in
+			while (ReadLineResult == string.Empty) Thread.Sleep(50);
+
+			var temp = ReadLineResult;
+
+			// Reset state
+			ReadLineResult = string.Empty;
+			ReadLineTask = null;
+
+            return temp;
+		});
+
+		return await ReadLineTask;
 	}
 
 	public void Clear()
