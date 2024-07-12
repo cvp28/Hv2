@@ -95,17 +95,7 @@ public partial class InputField : Widget
 		});
 	}
 
-    public override void OnFocused()
-    {
-		CursorVisible = true;
-    }
-
-    public override void OnDefocused()
-    {
-		CursorVisible = false;
-    }
-
-    public override void Draw(Renderer r)
+	public override void Draw(Renderer r)
 	{
 		r.WriteAt(X, Y, Prompt);
 

@@ -91,10 +91,7 @@ public class Menu : Widget
 		}
 	}
 
-    public override void OnFocused() => DoStyle = true;
-    public override void OnDefocused() => DoStyle = false;
-
-    public override void Draw(Renderer r)
+	public override void Draw(Renderer r)
 	{
 		switch (TextAlignment)
 		{

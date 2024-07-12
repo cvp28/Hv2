@@ -21,4 +21,8 @@
       <HintPath>..\..\Cosmo\Cosmo\bin\Debug\net8.0\Cosmo.dll</HintPath>
     </Reference>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Widgets\Calendar\" />
+  </ItemGroup>
 </Project>
