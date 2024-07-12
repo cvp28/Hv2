@@ -16,7 +16,23 @@ public static partial class Hv2
 	private static Renderer CosmoRenderer;
 	private static PooledList<Layer> LayerStack;
 
-	public static Widget FocusedWidget;
+	private static Widget _FocusedWidget;
+
+	public static Widget FocusedWidget
+	{
+		get => _FocusedWidget;
+
+		set
+		{
+			if (_FocusedWidget is not null)
+				_FocusedWidget.OnDefocused();
+
+			_FocusedWidget = value;
+
+			if (value is not null)
+				_FocusedWidget.OnFocused();
+		}
+	}
 
 	public static PooledDictionary<ConsoleKey, Action> GlobalKeyActions;
 
@@ -115,16 +131,19 @@ public static partial class Hv2
 			// Do rendering
 			RenderLayers(LayerStack);
 
-			// Do Status Messages
-			HandleStatusMessages();
+			// Render current status message if set (label being visible means the message should be set)
+			if (lblCurrentStatusMessage.Visible)
+				lblCurrentStatusMessage.Draw(CosmoRenderer);
 
 			CurrentFPS++;
 			MainLoopElapsed = Stopwatch.GetElapsedTime(MainLoopStartTicks);
 
+
+			// Frame rate limiter
 			var FrameRateLimiterStartTicks = Stopwatch.GetTimestamp();
 
-			if (FrameRateLimiterEnabled)
-			{
+			if (FrameRateLimiterEnabled) // TODO (Carson): Somehow make this better
+            {
 				// Hardcoded 60 FPS limit for now
 				var sleep_time = TimeSpan.FromSeconds(1.0 / 60) - MainLoopElapsed;
 
@@ -168,32 +187,35 @@ public static partial class Hv2
 		CosmoRenderer.Flush();
 	}
 
-
-
-	private static void HandleStatusMessages()
-	{
-
-	}
+	/// <summary>
+	/// Initiates a center-screen status message to display for the specified time
+	/// </summary>
+	/// <param name="Message">The message content</param>
+	/// <param name="Time">The time that this message will be on the screen</param>
+	public static void DoStatusMessage(string Message, TimeSpan Time, bool Flashing = true) => 
+		PendingStatusMessages.Enqueue(new(Message, Time, Flashing));
 
 	/// <summary>
 	/// Initiates a center-screen status message to display for the specified time
 	/// </summary>
 	/// <param name="Message">The message content</param>
 	/// <param name="Time">The time that this message will be on the screen</param>
-	public static void DoStatusMessage(string Message, TimeSpan Time) => DoStatusMessage(new(Message, Time));
-
-    /// <summary>
-    /// Initiates a center-screen status message to display for the specified time
-    /// </summary>
-    /// <param name="Message">The message content</param>
-    /// <param name="Time">The time that this message will be on the screen</param>
 	/// <param name="Foreground">The message foreground color</param>
 	/// <param name="Background">The message background color</param>
-    public static void DoStatusMessage(string Message, TimeSpan Time, Color24 Foreground, Color24 Background) => DoStatusMessage(new(Message, Time) { Foreground = Foreground, Background = Background });
+	public static void DoStatusMessage(string Message, TimeSpan Time, Color24 Foreground, Color24 Background, bool Flashing = true) =>
+		PendingStatusMessages.Enqueue(new(Message, Time, Foreground, Background, Flashing));
 
-	private static void DoStatusMessage(StatusMessage StatusMessage)
+	public static void EndCurrentStatusMessage()
 	{
+		lblCurrentStatusMessage.Visible = false;
+		CurrentStatusMessage = null;
+	}
 
+	public static void ClearAllStatusMessages(bool IncludingCurrent)
+	{
+		if (IncludingCurrent) EndCurrentStatusMessage();
+
+		PendingStatusMessages.Clear();
 	}
 
 	private static Action PlatformEnableHighResolutionTiming = OperatingSystem.IsWindows() ?
@@ -324,7 +346,14 @@ public static partial class Hv2
 		LayerStack[0].OnHide();
 		LayerStack.RemoveAt(0);
 	}
-	
+
+	public static bool RemoveLayerByType<T>() where T : Layer
+	{
+		var layer = GetLayerByType<T>();
+
+		return LayerStack.Remove(layer);
+	}
+
 	public static Maybe<T> GetLayerByType<T>() where T : Layer
 	{
 		var temp = LayerStack.FirstOrDefault(l => l.GetType() == typeof(T));
