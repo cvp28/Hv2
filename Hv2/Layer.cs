@@ -11,7 +11,7 @@ public abstract partial class Layer
 	/// <summary>
 	/// A convenience dictionary provided so the client can easily store map-based state
 	/// </summary>
-	internal PooledDictionary<string, dynamic> State = [];
+	protected PooledDictionary<string, dynamic> State = [];
 	
 	public Layer()
 	{ }
