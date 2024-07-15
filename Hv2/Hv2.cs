@@ -313,18 +313,30 @@ public static partial class Hv2
 	}
 	
 	#region Layer Controls
-	public static void AddLayerFront<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : Layer
-	{
-		var l = Activator.CreateInstance<T>();
-		l.OnAttachInternal();
+	public static void AddLayerFront<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(params object[] Args) where T : Layer
+    {
+        ThrowIfNotInitialized();
+
+        Layer l = Args.Length == 0 ?
+            Activator.CreateInstance<T>()
+            :
+            Activator.CreateInstance(typeof(T), Args) as T;
+		
+        l.OnAttachInternal();
 		l.OnShow();
 		
 		LayerStack.Add(l);
 	}
 	
-	public static void AddLayerBack<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : Layer
-	{
-		var l = Activator.CreateInstance<T>();
+	public static void AddLayerBack<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(params object[] Args) where T : Layer
+    {
+        ThrowIfNotInitialized();
+
+		Layer l = Args.Length == 0 ? 
+			Activator.CreateInstance<T>()
+			: 
+			Activator.CreateInstance(typeof(T), Args) as T;
+
 		l.OnAttachInternal();
 		l.OnShow();
 		
@@ -332,16 +344,20 @@ public static partial class Hv2
 	}
 	
 	public static void RemoveLayerFront()
-	{
-		if (!LayerStack.Any()) return;
+    {
+        ThrowIfNotInitialized();
+
+        if (!LayerStack.Any()) return;
 
 		LayerStack[^1].OnHide();
 		LayerStack.RemoveAt(LayerStack.Count - 1);
 	}
 	
 	public static void RemoveLayerBack()
-	{
-		if (!LayerStack.Any()) return;
+    {
+        ThrowIfNotInitialized();
+
+        if (!LayerStack.Any()) return;
 
 		LayerStack[0].OnHide();
 		LayerStack.RemoveAt(0);
@@ -349,14 +365,42 @@ public static partial class Hv2
 
 	public static bool RemoveLayerByType<T>() where T : Layer
 	{
+		ThrowIfNotInitialized();
+
 		var layer = GetLayerByType<T>();
 
 		return LayerStack.Remove(layer);
 	}
 
+	public static bool ReplaceLayerByType<T, U>(params object[] Args) where T : Layer where U : Layer
+    {
+        ThrowIfNotInitialized();
+
+		var layer = GetLayerByType<T>();
+
+		if (!layer) return false;
+
+		var index = LayerStack.IndexOf(layer);
+
+        Layer new_layer = Args.Length == 0 ?
+            Activator.CreateInstance<U>()
+            :
+            Activator.CreateInstance(typeof(U), Args) as U;
+
+        new_layer.OnAttachInternal();
+        new_layer.OnShow();
+
+		LayerStack.Insert(index, new_layer);		// Insert new layer
+		LayerStack.RemoveAt(index + 1);				// Remove old layer (which will have been bumped up by one index at this point)
+
+		return true;
+	}
+
 	public static Maybe<T> GetLayerByType<T>() where T : Layer
-	{
-		var temp = LayerStack.FirstOrDefault(l => l.GetType() == typeof(T));
+    {
+        ThrowIfNotInitialized();
+
+        var temp = LayerStack.FirstOrDefault(l => l.GetType().IsAssignableTo(typeof(T)));
 		
 		if (temp is null)
 			return Maybe<T>.Fail();
