@@ -24,9 +24,31 @@ public static partial class Hv2
 			WindowWidth = Console.WindowWidth;
 			WindowHeight = Console.WindowHeight;
 
-			Thread.Sleep(10);
+            UpdateDimensions(ref CurrentDimensions);
+            DimensionsHaveChanged = DimensionsAreDifferent(CurrentDimensions, LastDimensions);
+            LastDimensions = CurrentDimensions;
+
+            Thread.Sleep(10);
 		}
 	}
+
+    private static bool DimensionsAreDifferent(Dimensions d, Dimensions d2)
+    {
+        bool WindowWidthChanged = d.WindowWidth != d2.WindowWidth;
+        bool WindowHeightChanged = d.WindowHeight != d2.WindowHeight;
+        bool BufferWidthChanged = d.BufferWidth != d2.BufferWidth;
+        bool BufferHeightChanged = d.BufferHeight != d2.BufferHeight;
+
+        return WindowWidthChanged || WindowHeightChanged || BufferWidthChanged || BufferHeightChanged;
+    }
+
+    private static void UpdateDimensions(ref Dimensions d)
+    {
+        d.WindowWidth = Console.WindowWidth;
+        d.WindowHeight = Console.WindowHeight;
+        d.BufferWidth = Console.BufferWidth;
+        d.BufferHeight = Console.BufferHeight;
+    }
 
     private static ConcurrentQueue<StatusMessage> PendingStatusMessages = [];
 

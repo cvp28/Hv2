@@ -377,6 +377,10 @@ public partial class InputField : Widget
 				CursorToEnd();
 				break;
 
+			case ConsoleKey.Escape:
+                if (ReadLineTask is not null) CancelGetResult = true;
+                break;
+
 			case ConsoleKey.Enter:
 				RaiseInputEvent = true;
 				break;
@@ -486,6 +490,8 @@ public partial class InputField : Widget
 	private Task<string> ReadLineTask = null;
 	private string ReadLineResult = string.Empty;
 
+	private bool CancelGetResult = false;
+
 	public async Task<string> ReadLineAsync()
 	{
 		// Only allows one thread to wait at a time for a result
@@ -496,7 +502,18 @@ public partial class InputField : Widget
 		ReadLineTask = Task.Run(delegate
 		{
 			// Simply check 20 times a second for a result to come in
-			while (ReadLineResult == string.Empty) Thread.Sleep(50);
+			while (ReadLineResult == string.Empty)
+			{
+                if (CancelGetResult)
+                {
+                    CancelGetResult = false;
+					ReadLineResult = string.Empty;
+                    ReadLineTask = null;
+                    return null;
+                }
+
+                Thread.Sleep(50);
+			}
 
 			var temp = ReadLineResult;
 

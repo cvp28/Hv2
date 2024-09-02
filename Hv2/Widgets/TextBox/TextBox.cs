@@ -154,8 +154,6 @@ public class TextBox : Widget
 		DoLogging = false;
 	}
 
-	public override void OnInput(ConsoleKeyInfo cki) { }
-
 	public override void Draw(Renderer r)
 	{
 		if (Height <= 0 || Width <= 0) return;
@@ -521,9 +519,9 @@ public class TextBox : Widget
 				};
 			}
 		}
-		catch (Exception)
+		catch (Exception ex)
 		{
-			throw new Exception($"IndexUnderCursor: {IndexUnderCursor}, Character: '{Character}', ScreenBuffer Count: {ScreenBuffer.Count}\nScreenBufferSize: {ScreenBufferSize}");
+			throw new Exception($"IndexUnderCursor: {IndexUnderCursor}, Character: '{Character}', ScreenBuffer Count: {ScreenBuffer.Count}\nScreenBufferSize: {ScreenBufferSize}", ex);
 		}
 	}
 

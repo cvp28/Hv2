@@ -12,7 +12,7 @@ public abstract partial class Widget
 	/// </summary>
 	public bool EnableFocusChangeEvents = true;
 
-	protected PooledDictionary<ConsoleKeyInfo, Action<ConsoleKeyInfo>> KeyActions = [];
+	public PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> KeyActions = [];
 
 	public virtual partial void OnFocused();
 	public virtual partial void OnDefocused();
@@ -33,6 +33,6 @@ public abstract partial class Widget
 
 	public virtual partial void OnInput(ConsoleKeyInfo cki)
 	{
-		if (KeyActions.ContainsKey(cki)) KeyActions[cki](cki);
+		if (KeyActions.ContainsKey(cki.Key)) KeyActions[cki.Key](cki);
 	}
 }

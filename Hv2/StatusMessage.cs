@@ -18,7 +18,7 @@ internal class StatusMessage
         this.Message = Message;
         this.Time = Time;
 
-        Foreground = new(255, 255, 0); // "Sign Of The Crown" - https://icolorpalette.com/color/fce49c
+        Foreground = new(255, 255, 0);
         Background = Color24.Black;
 
         this.Flashing = Flashing;

@@ -1,4 +1,7 @@
 ﻿using Cosmo;
+using System.Diagnostics;
+using System.Text;
+using System.Timers;
 
 namespace Hv2UI;
 
@@ -12,8 +15,10 @@ public class ScrollableMenu : Widget
 	// Called whenever the user selects an action
 	public Action<int, string> OnSubmit;
 
-	private Task<MenuOption> SubmitTask = null;
+	private Task<Maybe<MenuOption>> SubmitTask = null;
 	private MenuOption SubmitResult = null;
+
+	public bool EnableSearching { get; set; }
 	
 	private int ScrollY = 0; // Index that tracks where in the menu we have scrolled to
 	private int ScrollYMax => Options.Count <= Height ? 0 : Options.Count - Height;
@@ -63,11 +68,19 @@ public class ScrollableMenu : Widget
 		this.Height = Height;
 		
 		SelectedOption = 0;
-		
+
+		EnableSearching = false;
+
 		DoStyle = true;
 		SelectedOptionStyle = MenuStyle.Highlighted;
 
 		Options = new();
+	}
+
+	public void SetOptionList(List<MenuOption> Options)
+	{
+		this.Options.Clear();
+		this.Options = Options;
 	}
 
     public override void OnFocused() => DoStyle = true;
@@ -105,21 +118,34 @@ public class ScrollableMenu : Widget
 		}
 	}
 
-	public async Task<MenuOption> GetResultAsync()
+	private bool CancelGetResult = false;
+
+	public async Task<Maybe<MenuOption>> GetResultAsync()
     {
 		if (SubmitTask is not null)
-			return null;
+			return Maybe<MenuOption>.Fail();
 
 		SubmitTask = Task.Run(delegate
         {
-            while (SubmitResult is null) Thread.Sleep(50);
+			while (SubmitResult is null)
+			{
+				if (CancelGetResult)
+				{
+					CancelGetResult = false;
+					SubmitResult = null;
+					SubmitTask = null;
+					return Maybe<MenuOption>.Fail();
+				}
+
+				Thread.Sleep(50);
+			}
 
             var temp = SubmitResult;
 
             SubmitResult = null;
             SubmitTask = null;
 
-			return temp;
+			return Maybe<MenuOption>.Success(temp);
         });
 
 		return await SubmitTask;
@@ -141,55 +167,55 @@ public class ScrollableMenu : Widget
 			}
 		}
 
-		void DrawCenterAligned(Renderer r)
+	void DrawCenterAligned(Renderer r)
+	{
+		int CurrentYOff = 0;
+		int LongestOptionLength = Options.Max(op => op.Text.Length);
+		int DrawCount = Options.Count > Height ? Height : Options.Count;
+
+		for (int i = ScrollY; i < ScrollY + DrawCount; i++)
 		{
-			int CurrentYOff = 0;
-			int LongestOptionLength = Options.Max(op => op.Text.Length);
-			int DrawCount = Options.Count > Height ? Height : Options.Count;
+			int CurrentX = X + (LongestOptionLength / 2) - (Options[i].Text.Length / 2) + 1;
 
-			for (int i = ScrollY; i < ScrollY + DrawCount; i++)
-			{
-				int CurrentX = X + (LongestOptionLength / 2) - (Options[i].Text.Length / 2) + 1;
-
-				if (i == SelectedOption && DoStyle)
-					DrawStyledOption(CurrentX, Y + CurrentYOff, Options[i], r);
-				else
-					r.WriteAt(CurrentX, Y + CurrentYOff, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, StyleCode.None);
+			if (i == SelectedOption && DoStyle)
+				DrawStyledOption(CurrentX, Y + CurrentYOff, Options[i], r);
+			else
+				r.WriteAt(CurrentX, Y + CurrentYOff, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, StyleCode.None);
 				
-				CurrentYOff++;
-			}
+			CurrentYOff++;
 		}
+	}
 
-		void DrawStyledOption(int X, int Y, MenuOption Option, Renderer r)
+	void DrawStyledOption(int X, int Y, MenuOption Option, Renderer r)
+	{
+		switch (SelectedOptionStyle)
 		{
-			switch (SelectedOptionStyle)
-			{
-				case MenuStyle.Arrow:
-					{
-						//	RenderContext.VTSetCursorPosition(X, Y);
-						//	RenderContext.VTEnterColorContext(Option.TextForeground, Option.TextBackground, delegate ()
-						//	{
-						//		RenderContext.VTDrawText(Option.Text);
-						//		RenderContext.VTDrawChar(' ');
-						//		RenderContext.VTDrawChar('<');
-						//	});
+			case MenuStyle.Arrow:
+				{
+					//	RenderContext.VTSetCursorPosition(X, Y);
+					//	RenderContext.VTEnterColorContext(Option.TextForeground, Option.TextBackground, delegate ()
+					//	{
+					//		RenderContext.VTDrawText(Option.Text);
+					//		RenderContext.VTDrawChar(' ');
+					//		RenderContext.VTDrawChar('<');
+					//	});
 						
-						r.WriteAt(X, Y, $"{Option.Text} <", Option.TextForeground, Option.TextBackground, StyleCode.None);
-						break;
-					}
+					r.WriteAt(X, Y, $"{Option.Text} <", Option.TextForeground, Option.TextBackground, StyleCode.None);
+					break;
+				}
 
-				case MenuStyle.Highlighted:
-					{
-						//	RenderContext.VTSetCursorPosition(X, Y);
-						//	RenderContext.VTInvert();
-						//	RenderContext.VTDrawText(Option.Text);
-						//	RenderContext.VTRevert();
+			case MenuStyle.Highlighted:
+				{
+					//	RenderContext.VTSetCursorPosition(X, Y);
+					//	RenderContext.VTInvert();
+					//	RenderContext.VTDrawText(Option.Text);
+					//	RenderContext.VTRevert();
 						
-						r.WriteAt(X, Y, Option.Text, Option.TextForeground, Option.TextBackground, StyleCode.Inverted);
-						break;
-					}
-			}
+					r.WriteAt(X, Y, Option.Text, Option.TextForeground, Option.TextBackground, StyleCode.Inverted);
+					break;
+				}
 		}
+	}
 	
 	public override void OnInput(ConsoleKeyInfo cki)
 	{
@@ -237,9 +263,49 @@ public class ScrollableMenu : Widget
 				if (OnSubmit is not null) OnSubmit(SelectedOption, this[SelectedOption].Text);
 				if (SubmitTask is not null) SubmitResult = this[SelectedOption];
 				break;
-		}
+
+			case ConsoleKey.Escape:
+				if (SubmitTask is not null) CancelGetResult = true;
+				break;
+
+			case ConsoleKey.Backspace:
+				Buffer.Clear();
+				CurrentBufferIndex = 0;
+				break;
+
+            default:
+				if (!EnableSearching)
+					break;
+
+                char c = cki.KeyChar;
+
+                if (!(char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsWhiteSpace(c) || char.IsSymbol(c)))
+                    break;
+
+				if (Stopwatch.GetElapsedTime(SearchTimestamp) > TimeSpan.FromSeconds(1))
+				{
+					SearchTimestamp = default;
+					Buffer.Clear();
+					CurrentBufferIndex = 0;
+				}
+
+				SearchTimestamp = Stopwatch.GetTimestamp();
+
+                Buffer.Insert(CurrentBufferIndex, c);
+                CurrentBufferIndex++;
+
+				// Select closest matching option
+				var best = FuzzySharp.Process.ExtractOne(Buffer.ToString(), Options.Select(s => s.Text));
+				SelectedOption = best.Index;
+				ScrollY = Math.Min(SelectedOption, ScrollYMax);
+				break;
+        }
 	}
-	
+
+	private long SearchTimestamp = 0;
+	private StringBuilder Buffer = new();
+	private int CurrentBufferIndex = 0;
+
 	private bool IsValidIndex(int Index) => Index >= 0 && Index < Options.Count;
 	
 	private bool AtTop => ScrollY == 0;

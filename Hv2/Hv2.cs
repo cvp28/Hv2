@@ -69,6 +69,9 @@ public static partial class Hv2
 		LayerStack = new();
 		GlobalKeyActions = new();
 
+		WindowWidth = Console.WindowWidth;
+		WindowHeight = Console.WindowHeight;
+
 		InputBuffer = new();
 
 		Console.OutputEncoding = Encoding.UTF8;
@@ -80,7 +83,7 @@ public static partial class Hv2
 		{
 			LastFPS = CurrentFPS;
 			CurrentFPS = 0;
-			Console.Title = $"LastFPS: {LastFPS}";
+			//Console.Title = $"LastFPS: {LastFPS}";
 		};
 
 		LastFPS = 0;
@@ -117,7 +120,41 @@ public static partial class Hv2
 			throw new Exception("Hv2 is not initialized. Please call Hv2.Initialize() first.");
 	}
 
-	private static void MainLoop()
+	private static Dimensions LastDimensions = new();
+	private static Dimensions CurrentDimensions = new();
+
+	private static bool DimensionsHaveChanged = false;
+
+    private static void ResizeRoutine()
+    {
+        Stopwatch ResizeTimer = new();
+
+        Dimensions LastDimensions = Dimensions.Current;
+
+        ResizeTimer.Restart();
+
+        while (true)
+        {
+            Console.CursorVisible = false;
+
+            var CurrentDimensions = Dimensions.Current;
+
+            if (DimensionsAreDifferent(CurrentDimensions, LastDimensions))
+                ResizeTimer.Restart();
+
+            LastDimensions = CurrentDimensions;
+
+            if (ResizeTimer.ElapsedMilliseconds >= 100)
+            {
+                ResizeTimer.Reset();
+                return;
+            }
+
+            Thread.Sleep(10);
+        }
+    }
+
+    private static void MainLoop()
 	{
 		while (Running)
 		{
@@ -125,8 +162,19 @@ public static partial class Hv2
 
 			long MainLoopStartTicks = Stopwatch.GetTimestamp();
 
-			// Do input
-			HandleInput();
+            if (DimensionsHaveChanged)
+            {
+				CosmoRenderer.Resize();
+
+                Console.Clear();
+                Console.CursorVisible = false;
+
+                // Blocks until dimensions are stable for at least a second
+                //ResizeRoutine();
+            }
+
+            // Do input
+            HandleInput();
 
 			// Do rendering
 			RenderLayers(LayerStack);
