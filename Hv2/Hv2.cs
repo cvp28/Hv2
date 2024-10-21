@@ -13,7 +13,7 @@ public static partial class Hv2
 	public static int WindowWidth { get; private set; }
 	public static int WindowHeight { get; private set; }
 
-	private static Renderer CosmoRenderer;
+	public static Renderer CosmoRenderer;
 	private static PooledList<Layer> LayerStack;
 
 	private static Widget _FocusedWidget;
@@ -166,7 +166,6 @@ public static partial class Hv2
             {
 				CosmoRenderer.Resize();
 
-                Console.Clear();
                 Console.CursorVisible = false;
 
                 // Blocks until dimensions are stable for at least a second
