@@ -54,7 +54,7 @@ public partial class InputField : Widget
 	public Func<string, bool> OnCharInput { get; set; }
 
 	#region Non-Public Members
-	private StringBuilder Buffer = new();
+	internal StringBuilder Buffer = new();
 	private int CurrentBufferIndex = 0;
 
 	private List<Token> CurrentTokens = new();
@@ -93,6 +93,12 @@ public partial class InputField : Widget
 				CursorTimer.Restart();
 			}
 		});
+	}
+
+	public void EnsureCursorVisible()
+	{
+		InternalDrawCursor = true;
+		CursorTimer.Restart();
 	}
 
     public override void OnFocused()
