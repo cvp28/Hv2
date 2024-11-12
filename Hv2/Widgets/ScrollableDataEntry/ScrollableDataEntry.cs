@@ -1,5 +1,5 @@
 ﻿using Cosmo;
-using System.Security.Principal;
+using System.ComponentModel.Design;
 
 namespace Hv2UI;
 
@@ -9,7 +9,10 @@ public class ScrollableDataEntry : Widget
 	public int Y { get; set; }
 	
 	public int Height { get; set; }
-	
+
+	public Color24 SelectedForeground = new(255, 238, 140);
+	public Color24 SelectedBackground = Color24.Black;
+
 	private int ScrollY = 0; // Index that tracks where in the menu we have scrolled to
 	private int ScrollYMax => Fields.Count <= Height ? 0 : Fields.Count - Height;
 	
@@ -84,7 +87,10 @@ public class ScrollableDataEntry : Widget
 			//	if (!Fields[i].VisibilityRule())
 			//		continue;
 
-            r.WriteAt(X + 1, Y + CurrentYOff, VisibleFields[i].Text, VisibleFields[i].TextForeground, VisibleFields[i].TextBackground, StyleCode.None);
+			if (VisibleFields[i] == CurrentlySelectedField)
+				r.WriteAt(X + 1, Y + CurrentYOff, VisibleFields[i].Text, SelectedForeground, SelectedBackground, StyleCode.None);
+			else
+				r.WriteAt(X + 1, Y + CurrentYOff, VisibleFields[i].Text, VisibleFields[i].TextForeground, VisibleFields[i].TextBackground, StyleCode.None);
 
 			// Field-specific rendering
 
@@ -103,29 +109,24 @@ public class ScrollableDataEntry : Widget
 						X + VisibleFields[i].Text.Length + 1,
 						Y + CurrentYOff,
 
-						bcf.Checked ? "" : " ",
-
-						Color24.White,
-						Color24.Black,
-
-						bcf == CurrentlySelectedField && !bcf.Checked ? StyleCode.Inverted : StyleCode.None
+						bcf.Checked ? "✓" : "X"
 					);
 					break;
 
 				case BooleanOptionField bof:
-					r.WriteAt()
-
-					r.WriteAt(
-						X + VisibleFields[i].Text.Length + 1,
-						Y + CurrentYOff,
-
-						$"{bof.Option1}  {bof.Option2}",
-
-						Color24.White,
-						Color24.Black,
-
-						bof == CurrentlySelectedField && !
-						)
+					//	r.WriteAt()
+					//	
+					//	r.WriteAt(
+					//		X + VisibleFields[i].Text.Length + 1,
+					//		Y + CurrentYOff,
+					//	
+					//		$"{bof.Option1}  {bof.Option2}",
+					//	
+					//		Color24.White,
+					//		Color24.Black,
+					//	
+					//		bof == CurrentlySelectedField && !
+					//		)
 					break;
 			}
 
@@ -219,6 +220,10 @@ public class ScrollableDataEntry : Widget
 					case BooleanCheckboxField bcf:
 						if (cki.Key == ConsoleKey.Enter || cki.Key == ConsoleKey.Spacebar)
 							bcf.Checked = !bcf.Checked;
+						break;
+
+					case BooleanOptionField bof:
+						
 						break;
 				}
 
