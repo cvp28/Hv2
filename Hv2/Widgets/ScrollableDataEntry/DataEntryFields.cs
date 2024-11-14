@@ -120,6 +120,9 @@ public class ListField : DataEntryField
     public List<string> Options;
     public int SelectedOption;
 
+    public bool PaddingEnabled { get; set; } = true;
+    public int PaddingAmount { get; set; } = 2;
+
     public ListField(string Text, params string[] Options)
     {
         base.Text = Text;
@@ -137,4 +140,9 @@ public class ListField : DataEntryField
     {
         if (OnUpdate is not null) OnUpdate(SelectedOption, Options[SelectedOption]);
     }
+
+    internal string CenteredByPadding(string StringToCenter, int TotalLength)
+	{
+		return StringToCenter.PadLeft( ((TotalLength - StringToCenter.Length) / 2) + StringToCenter.Length).PadRight(TotalLength);
+	}
 }

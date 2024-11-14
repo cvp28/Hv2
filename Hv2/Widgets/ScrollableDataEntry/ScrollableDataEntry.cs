@@ -134,7 +134,13 @@ public class ScrollableDataEntry : Widget
 
 				case ListField lf:
 					int RenderX = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
-					r.WriteAt(RenderX, Y + CurrentYOff, $"< {lf.Options[lf.SelectedOption]} >");
+
+					// very long very very silly line of code
+					string RenderText = PaddingEnabled ? lf.CenteredByPadding(lf.Options[lf.SelectedOption], lf.Options.MaxBy(o => o.Length).Length + (PaddingAmount * 2)) : lf.Options[lf.SelectedOption];
+					// this could easily be an if statement that's easy to read
+					// but that would be too easy
+
+					r.WriteAt(RenderX, Y + CurrentYOff, $"<{RenderText}>");
 					break;
 			}
 
