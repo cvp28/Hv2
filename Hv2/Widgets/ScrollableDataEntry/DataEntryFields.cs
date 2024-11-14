@@ -15,12 +15,15 @@ public class DataEntryField
     {
         TextForeground = Color24.White;
         TextBackground = Color24.Black;
+        VisibilityRule = () => true;
     }
 
     /// <summary>
     /// Determines if the field should be displayed
     /// </summary>
-    public Func<bool> VisibilityRule = () => true;
+    public Func<bool> VisibilityRule;
+
+    public T As<T>() where T : class => this as T; // A C programmer somewhere just died because of this
 }
 
 public class TextField : DataEntryField
@@ -56,6 +59,13 @@ public class TextField : DataEntryField
             defInputField.Buffer.Append(value);
         }
     }
+
+    public Action<string> OnUpdate;
+
+    public void TryOnUpdate()
+    {
+        if (OnUpdate is not null) OnUpdate(Value);
+    }
 }
 
 public class BooleanCheckboxField : DataEntryField
@@ -66,6 +76,13 @@ public class BooleanCheckboxField : DataEntryField
     {
         base.Text = Text;
         this.Checked = Checked;
+    }
+
+    public Action<bool> OnUpdate;
+
+    public void TryOnUpdate()
+    {
+        if (OnUpdate is not null) OnUpdate(Checked);
     }
 }
 
@@ -79,11 +96,45 @@ public class BooleanOptionField : DataEntryField
     /// </summary>
     public bool Selected;
 
-    public BooleanOptionField(string Text, string Option1, string Option2, bool Selected = true)
+    public StyleCode SelectedStyle;
+
+    public BooleanOptionField(string Text, string Option1, string Option2, StyleCode SelectedStyle = StyleCode.Underlined, bool Selected = true)
     {
         base.Text = Text;
         this.Option1 = Option1;
         this.Option2 = Option2;
+        this.SelectedStyle = SelectedStyle;
         this.Selected = Selected;
+    }
+
+    public Action<bool> OnUpdate;
+
+    public void TryOnUpdate()
+    {
+        if (OnUpdate is not null) OnUpdate(Selected);
+    }
+}
+
+public class ListField : DataEntryField
+{
+    public List<string> Options;
+    public int SelectedOption;
+
+    public ListField(string Text, params string[] Options)
+    {
+        base.Text = Text;
+
+        if (Options.Any())
+        {
+            this.Options = Options.ToList();
+            SelectedOption = 0;
+        }
+    }
+
+    public Action<int, string> OnUpdate;
+
+    public void TryOnUpdate()
+    {
+        if (OnUpdate is not null) OnUpdate(SelectedOption, Options[SelectedOption]);
     }
 }
