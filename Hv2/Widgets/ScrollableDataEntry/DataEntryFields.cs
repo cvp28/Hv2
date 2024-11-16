@@ -1,15 +1,23 @@
 ﻿
+using System.Reflection;
+using System.Xml.Serialization;
+
 using Cosmo;
 
 namespace Hv2UI;
 
+[XmlInclude(typeof(TextField))]
+[XmlInclude(typeof(BooleanCheckboxField))]
+[XmlInclude(typeof(BooleanOptionField))]
+[XmlInclude(typeof(ListField))]
 public class DataEntryField
 {
-    public string ID;
+    [XmlAttribute("ID")]            public string ID;
 
-    public string Text;
-    public Color24 TextForeground;
-    public Color24 TextBackground;
+    [XmlElement("Text")]            public string Text;
+
+    [XmlElement("TextForeground")]  public Color24 TextForeground;
+    [XmlElement("TextBackground")]  public Color24 TextBackground;
 
     public DataEntryField()
     {
@@ -21,6 +29,7 @@ public class DataEntryField
     /// <summary>
     /// Determines if the field should be displayed
     /// </summary>
+    [XmlIgnore]
     public Func<bool> VisibilityRule;
 
     public T As<T>() where T : class => this as T; // A C programmer somewhere just died because of this
@@ -28,6 +37,9 @@ public class DataEntryField
 
 public class TextField : DataEntryField
 {
+    public TextField() : this("")
+    { }
+
     public TextField(string Text)
     {
         base.Text = Text;
@@ -44,8 +56,10 @@ public class TextField : DataEntryField
         };
     }
 
+    [XmlIgnore]
     internal InputField defInputField;
 
+    [XmlElement("Buffer")]
     public string Value
     {
         get => defInputField.Buffer.ToString();
@@ -60,7 +74,8 @@ public class TextField : DataEntryField
         }
     }
 
-    public Action<string> OnUpdate;
+    
+    [XmlIgnore] public Action<string> OnUpdate;
 
     public void TryOnUpdate()
     {
@@ -70,7 +85,11 @@ public class TextField : DataEntryField
 
 public class BooleanCheckboxField : DataEntryField
 {
+    [XmlElement("Checked")]
     public bool Checked;
+
+    public BooleanCheckboxField() : this("")
+    { }
 
     public BooleanCheckboxField(string Text, bool Checked = true)
     {
@@ -78,6 +97,7 @@ public class BooleanCheckboxField : DataEntryField
         this.Checked = Checked;
     }
 
+    [XmlIgnore]
     public Action<bool> OnUpdate;
 
     public void TryOnUpdate()
@@ -88,15 +108,23 @@ public class BooleanCheckboxField : DataEntryField
 
 public class BooleanOptionField : DataEntryField
 {
+    [XmlElement("Option1")]
     public string Option1;
+
+    [XmlElement("Option2")]
     public string Option2;
 
     /// <summary>
     /// true for Option1, false for Option2
     /// </summary>
+    [XmlElement("Selected")]
     public bool Selected;
 
+    [XmlElement("StyleCode")]
     public StyleCode SelectedStyle;
+
+    public BooleanOptionField() : this("", "", "")
+    { }
 
     public BooleanOptionField(string Text, string Option1, string Option2, StyleCode SelectedStyle = StyleCode.Underlined, bool Selected = true)
     {
@@ -107,6 +135,7 @@ public class BooleanOptionField : DataEntryField
         this.Selected = Selected;
     }
 
+    [XmlIgnore]
     public Action<bool> OnUpdate;
 
     public void TryOnUpdate()
@@ -117,11 +146,17 @@ public class BooleanOptionField : DataEntryField
 
 public class ListField : DataEntryField
 {
+    [XmlArray("Options")]
     public List<string> Options;
+
+    [XmlElement("SelectedOption")]
     public int SelectedOption;
 
     public bool PaddingEnabled { get; set; } = true;
     public int PaddingAmount { get; set; } = 2;
+
+    public ListField() : this("", "")
+    { }
 
     public ListField(string Text, params string[] Options)
     {
@@ -134,6 +169,7 @@ public class ListField : DataEntryField
         }
     }
 
+    [XmlIgnore]
     public Action<int, string> OnUpdate;
 
     public void TryOnUpdate()

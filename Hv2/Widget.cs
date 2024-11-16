@@ -1,18 +1,21 @@
-﻿using Collections.Pooled;
+﻿using System.Xml.Serialization;
+
+using Collections.Pooled;
 using Cosmo;
 
 namespace Hv2UI;
 
 public abstract partial class Widget
 {
-	public bool Visible = true;
+    [XmlIgnore] public bool Visible = true;
 
-	/// <summary>
-	/// Toggles whether OnFocused or OnDefocused will be called when the widget gains or looses focus, respectively. (default true)
-	/// </summary>
-	public bool EnableFocusChangeEvents = true;
+    /// <summary>
+    /// Toggles whether OnFocused or OnDefocused will be called when the widget gains or looses focus, respectively. (default true)
+    /// </summary>
+    [XmlIgnore] public bool EnableFocusChangeEvents = true;
 
-	public PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> KeyActions = [];
+
+    [XmlIgnore] public PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> KeyActions = [];
 
 	public virtual partial void OnFocused();
 	public virtual partial void OnDefocused();
