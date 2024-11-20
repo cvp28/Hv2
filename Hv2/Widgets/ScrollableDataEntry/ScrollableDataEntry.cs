@@ -1,4 +1,5 @@
-﻿using System.Xml.Serialization;
+﻿using System.Text.Json;
+using System.Globalization;
 
 using Cosmo;
 
@@ -6,10 +7,10 @@ namespace Hv2UI;
 
 public class ScrollableDataEntry : Widget
 {
-    [XmlIgnore] public int X { get; set; }
-    [XmlIgnore] public int Y { get; set; }
+    public int X { get; set; }
+	public int Y { get; set; }
 
-    [XmlIgnore] public int Height { get; set; }
+	public int Height { get; set; }
 
 	public Color24 SelectedForeground = new(255, 238, 140);
 	public Color24 SelectedBackground = Color24.Black;
@@ -23,12 +24,10 @@ public class ScrollableDataEntry : Widget
 	private int ScrollY = 0; // Index that tracks where in the menu we have scrolled to
 	private int ScrollYMax => VisibleFields.Length <= Height ? 0 : VisibleFields.Length - Height;
 
-	[XmlArray("Fields")]
 	public List<DataEntryField> Fields;
 
     private DataEntryField[] VisibleFields => Fields.Where(f => f.VisibilityRule()).ToArray();
 
-	[XmlIgnore]
     public DataEntryField this[int Index]
 	{
 		get
@@ -48,7 +47,6 @@ public class ScrollableDataEntry : Widget
 		}
 	}
 
-    [XmlIgnore]
     public DataEntryField this[string ID]
 	{
 		get => Fields.FirstOrDefault(f => f.ID == ID);
@@ -69,17 +67,12 @@ public class ScrollableDataEntry : Widget
 		}
 	}
 
-    [XmlIgnore] public int SelectedFieldIndex { get; internal set; }
+    public int SelectedFieldIndex { get; internal set; }
 
     /// <summary>
     /// Called whenever the user selects an option with the arrow keys. Receives current index and option text.
     /// </summary>
-    [XmlIgnore] public Action<string, DataEntryField> OnSelectionChange { get; set; }
-
-	public ScrollableDataEntry() : this(0, 0, 3)
-	{
-		SelectedFieldIndex = 0;
-	}
+    public Action<string, DataEntryField> OnSelectionChange { get; set; }
 
 	public ScrollableDataEntry(int X, int Y, int Height)
 	{
@@ -94,18 +87,23 @@ public class ScrollableDataEntry : Widget
 
 	public void SerializeFieldsToFile(string Path)
 	{
-		using var f = File.Open(Path, FileMode.OpenOrCreate);
-		XmlSerializer xs = new(typeof(ScrollableDataEntry));
+		using var f = File.Open(Path, FileMode.Create, FileAccess.Write, FileShare.Read);
 
-		xs.Serialize(f, this);
+		var options = new JsonSerializerOptions();
+		options.IncludeFields = true;
+		options.WriteIndented = true;
+
+		JsonSerializer.Serialize(f, Fields, options);
 	}
 
-	public static ScrollableDataEntry DeserializeFromPath(string Path)
+	public void LoadFieldsFromFile(string Path)
 	{
         using var f = File.Open(Path, FileMode.Open);
-        XmlSerializer xs = new(typeof(ScrollableDataEntry));
 
-        return xs.Deserialize(f) as ScrollableDataEntry;
+        var options = new JsonSerializerOptions();
+        options.IncludeFields = true;
+
+        Fields = JsonSerializer.Deserialize<List<DataEntryField>>(f, options);
     }
 
 	public override void Draw(Renderer r)
@@ -127,14 +125,17 @@ public class ScrollableDataEntry : Widget
 			switch (VisibleFields[i])
 			{
 				case TextField tf:
+				{
 					tf.defInputField.CursorVisible = VisibleFields[i].ID == Fields[SelectedFieldIndex].ID;
 
 					tf.defInputField.X = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
 					tf.defInputField.Y = Y + CurrentYOff;
 					tf.defInputField.Draw(r);
 					break;
+				}
 
 				case BooleanCheckboxField bcf:
+				{
 					var Green = new Color24(0, 200, 0);
 					var Red = new Color24(200, 0, 0);
 
@@ -150,25 +151,112 @@ public class ScrollableDataEntry : Widget
 						StyleCode.None
 					);
 					break;
+				}
 
 				case BooleanOptionField bof:
+				{
 					int Option1X = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
-					int Option2X = Option1X + bof.Option1.Length + 2;
+					int Option2X = Option1X + bof.TrueOption.Length + 2;
 
-					r.WriteAt(Option1X, Y + CurrentYOff, bof.Option1, Color24.White, Color24.Black, bof.Selected ? bof.SelectedStyle : StyleCode.None);
-					r.WriteAt(Option2X, Y + CurrentYOff, bof.Option2, Color24.White, Color24.Black, bof.Selected ? StyleCode.None : bof.SelectedStyle);
+					r.WriteAt(Option1X, Y + CurrentYOff, bof.TrueOption, Color24.White, Color24.Black, bof.Selected ? bof.SelectedStyle : StyleCode.None);
+					r.WriteAt(Option2X, Y + CurrentYOff, bof.FalseOption, Color24.White, Color24.Black, bof.Selected ? StyleCode.None : bof.SelectedStyle);
 					break;
+				}
 
 				case ListField lf:
+				{
 					int RenderX = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
 
 					// very long very very silly line of code
-					string RenderText = PaddingEnabled ? lf.CenteredByPadding(lf.Options[lf.SelectedOption], lf.Options.MaxBy(o => o.Length).Length + (PaddingAmount * 2)) : lf.Options[lf.SelectedOption];
+					string RenderText = lf.PaddingEnabled ? lf.CenteredByPadding(lf.Options[lf.SelectedOption], lf.Options.MaxBy(o => o.Length).Length + (PaddingAmount * 2)) : lf.Options[lf.SelectedOption];
 					// this could easily be an if statement that's kind on the eyes
 					// but that would be too easy
 
 					r.WriteAt(RenderX, Y + CurrentYOff, $"<{RenderText}>");
 					break;
+				}
+
+				case ColorCodeField ccf:
+				{
+					int RenderX = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
+
+					// Index 0 (RGB/HEX Switch)
+					r.WriteAt(
+						RenderX,
+						Y + CurrentYOff,
+
+						ccf.Type switch
+						{
+							ColorCodeType.RgbHex => "HEX",
+							ColorCodeType.RgbDec => "DEC"
+						},
+
+                        new Color24(ccf.R, ccf.G, ccf.B),
+                        Color24.Black,
+
+						ccf.SelectedIndex == 0 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+
+                    // Index 1 (Byte 1 - Red)
+                    r.WriteAt(
+                        RenderX + 4,
+                        Y + CurrentYOff,
+
+                        ccf.Type switch
+                        {
+                            ColorCodeType.RgbHex => ccf.R.ToString("X"),
+                            ColorCodeType.RgbDec => ccf.R.ToString()
+                        },
+
+                        Color24.White,
+                        Color24.Black,
+
+                        ccf.SelectedIndex == 1 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+
+                    // Index 2 (Byte 2 - Green)
+                    r.WriteAt(
+                        RenderX + 8,
+                        Y + CurrentYOff,
+
+                        ccf.Type switch
+                        {
+                            ColorCodeType.RgbHex => ccf.G.ToString("X"),
+                            ColorCodeType.RgbDec => ccf.G.ToString()
+                        },
+
+                        Color24.White,
+                        Color24.Black,
+
+                        ccf.SelectedIndex == 2 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+
+                    // Index 3 (Byte 3 - Blue)
+                    r.WriteAt(
+                        RenderX + 12,
+                        Y + CurrentYOff,
+
+                        ccf.Type switch
+                        {
+                            ColorCodeType.RgbHex => ccf.B.ToString("X"),
+                            ColorCodeType.RgbDec => ccf.B.ToString()
+                        },
+
+                        Color24.White,
+                        Color24.Black,
+
+                        ccf.SelectedIndex == 3 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+
+					// Color Display
+                    r.WriteAt(
+                        RenderX + 16,
+                        Y + CurrentYOff,
+
+                        "█",
+
+                        new Color24(ccf.R, ccf.G, ccf.B),
+                        Color24.Black,
+
+                        StyleCode.None);
+                    break;
+				}
 			}
 
 			CurrentYOff++;
@@ -195,6 +283,24 @@ public class ScrollableDataEntry : Widget
 				break;
 
 			case ConsoleKey.Enter:
+				// Field-specific override
+				switch (CurrentlySelectedField)
+				{
+					case ColorCodeField ccf:
+						if (ccf.SelectedIndex != 3)
+						{
+							ccf.Next();
+							goto skip;
+						}
+						else
+						{
+							ccf.SelectedIndex = 1;
+						}
+
+						break;
+
+				}
+
 				if (AdvanceOnEnter)
 				{
 					if ((ConsoleModifiers.Shift & cki.Modifiers) != 0)
@@ -202,6 +308,8 @@ public class ScrollableDataEntry : Widget
 					else
 						Next();
 				}
+
+				skip:
 				break;
 
 			default:
@@ -250,6 +358,93 @@ public class ScrollableDataEntry : Widget
 
 						lf.TryOnUpdate();
 						break;
+
+					case ColorCodeField ccf:
+					{
+						switch (ccf.SelectedIndex)
+						{
+							case 0:
+								if (cki.Key == ConsoleKey.Spacebar || cki.Key == ConsoleKey.Enter)
+									ccf.Type = ccf.Type == ColorCodeType.RgbHex ? ColorCodeType.RgbDec : ColorCodeType.RgbHex;
+								break;
+
+							case 1:
+								switch (cki.Key)
+								{
+									case ConsoleKey.OemPlus:
+									case ConsoleKey.Add:
+										ccf.R = ccf.R >= 255 ? (byte)0 : ++ccf.R;
+										break;
+
+									case ConsoleKey.OemMinus:
+									case ConsoleKey.Subtract:
+										ccf.R = ccf.R <= 0 ? (byte)255 : --ccf.R;
+										break;
+
+									case ConsoleKey.Delete:
+										ccf.R = 0;
+										break;
+
+									default:
+                                        ccf.DoColorInput(cki.KeyChar);
+                                        break;
+								}
+								break;
+
+							case 2:
+								switch (cki.Key)
+								{
+									case ConsoleKey.OemPlus:
+									case ConsoleKey.Add:
+										ccf.G = ccf.G >= 255 ? (byte)0 : ++ccf.G;
+										break;
+
+									case ConsoleKey.OemMinus:
+									case ConsoleKey.Subtract:
+										ccf.G = ccf.G <= 0 ? (byte)255 : --ccf.G;
+										break;
+
+									case ConsoleKey.Delete:
+										ccf.G = 0;
+										break;
+
+                                    default:
+                                        ccf.DoColorInput(cki.KeyChar);
+                                        break;
+                                }
+								break;
+
+							case 3:
+								switch (cki.Key)
+								{
+									case ConsoleKey.OemPlus:
+									case ConsoleKey.Add:
+										ccf.B = ccf.B >= 255 ? (byte)0 : ++ccf.B;
+										break;
+
+									case ConsoleKey.OemMinus:
+									case ConsoleKey.Subtract:
+										ccf.B = ccf.B <= 0 ? (byte)255 : --ccf.B;
+										break;
+
+									case ConsoleKey.Delete:
+										ccf.B = 0;
+										break;
+
+                                    default:
+                                        ccf.DoColorInput(cki.KeyChar);
+                                        break;
+                                }
+								break;
+						}
+
+						if (cki.Key == ConsoleKey.RightArrow)
+							ccf.Next();
+						else if (cki.Key == ConsoleKey.LeftArrow)
+							ccf.Previous();
+
+						break;
+					}
 				}
 				break;
 		}
@@ -313,7 +508,7 @@ public class ScrollableDataEntry : Widget
 
 	private bool IsValidIndex(int Index) => Index >= 0 && Index < Fields.Count;
 
-    [XmlIgnore] public DataEntryField CurrentlySelectedField => VisibleFields[SelectedFieldIndex];
+    public DataEntryField CurrentlySelectedField => VisibleFields[SelectedFieldIndex];
 
 	private bool AtTop => ScrollY == 0;
 	
