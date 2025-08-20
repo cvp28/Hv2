@@ -100,6 +100,18 @@ public class ScrollableMenu : Widget
 				break;
 		}
 		
+		if (Height == 1)
+		{
+			if (AtTop)
+				r.WriteAt(X, Y, "↓");
+			else if (AtBottom)
+				r.WriteAt(X, Y, "↑");
+			else
+				r.WriteAt(X, Y, "↕");
+
+			return;
+		}
+
 		// Fancy ass unicode arrows ↑ ↓
 		if (!AtTop)
 		{
@@ -118,7 +130,7 @@ public class ScrollableMenu : Widget
 		}
 	}
 
-	private bool CancelGetResult = false;
+	private bool ShouldCancelGetResult = false;
 
 	public async Task<Maybe<MenuOption>> GetResultAsync()
     {
@@ -129,9 +141,9 @@ public class ScrollableMenu : Widget
         {
 			while (SubmitResult is null)
 			{
-				if (CancelGetResult)
+				if (ShouldCancelGetResult)
 				{
-					CancelGetResult = false;
+					ShouldCancelGetResult = false;
 					SubmitResult = null;
 					SubmitTask = null;
 					return Maybe<MenuOption>.Fail();
@@ -265,7 +277,7 @@ public class ScrollableMenu : Widget
 				break;
 
 			case ConsoleKey.Escape:
-				if (SubmitTask is not null) CancelGetResult = true;
+				CancelGetResultTask();
 				break;
 
 			case ConsoleKey.Backspace:
@@ -300,6 +312,11 @@ public class ScrollableMenu : Widget
 				ScrollY = Math.Min(SelectedOption, ScrollYMax);
 				break;
         }
+	}
+
+	public void CancelGetResultTask()
+	{
+		if (SubmitTask is not null) ShouldCancelGetResult = true;
 	}
 
 	private long SearchTimestamp = 0;

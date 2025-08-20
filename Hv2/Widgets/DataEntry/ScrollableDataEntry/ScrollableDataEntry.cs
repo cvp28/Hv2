@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
-using System.Globalization;
-
+using Collections.Pooled;
 using Cosmo;
 
 namespace Hv2UI;
@@ -26,7 +25,18 @@ public class ScrollableDataEntry : Widget
 
 	public List<DataEntryField> Fields;
 
-    private DataEntryField[] VisibleFields => Fields.Where(f => f.VisibilityRule()).ToArray();
+    private DataEntryField[] VisibleFields => Fields.Where(f => {
+
+		try
+		{
+			return f.VisibilityRule();
+		}
+		catch (Exception)
+		{
+			return true;
+		}
+
+	}).ToArray();
 
     public DataEntryField this[int Index]
 	{
@@ -108,21 +118,23 @@ public class ScrollableDataEntry : Widget
 
 	public override void Draw(Renderer r)
 	{
+		using var vf = VisibleFields.ToPooledList();
+
 		int CurrentYOff = 0;
-		int DrawCount = VisibleFields.Length > Height ? Height : VisibleFields.Length;
+		int DrawCount = vf.Count > Height ? Height : vf.Count;
 
 		ScrollY = Math.Clamp(ScrollY, 0, ScrollYMax);
 
 		for (int i = ScrollY; i < ScrollY + DrawCount; i++)
 		{
-			if (VisibleFields[i] == CurrentlySelectedField)
-				r.WriteAt(X + 1, Y + CurrentYOff, VisibleFields[i].Text, SelectedForeground, SelectedBackground, StyleCode.None);
+			if (vf[i] == CurrentlySelectedField)
+				r.WriteAt(X + 1, Y + CurrentYOff, vf[i].Text, SelectedForeground, SelectedBackground, StyleCode.None);
 			else
-				r.WriteAt(X + 1, Y + CurrentYOff, VisibleFields[i].Text, VisibleFields[i].TextForeground, VisibleFields[i].TextBackground, StyleCode.None);
+				r.WriteAt(X + 1, Y + CurrentYOff, vf[i].Text, vf[i].TextForeground, vf[i].TextBackground, StyleCode.None);
 
 			// Field-specific rendering
 
-			switch (VisibleFields[i])
+			switch (vf[i])
 			{
 				case TextField tf:
 				{
@@ -168,7 +180,7 @@ public class ScrollableDataEntry : Widget
 					int RenderX = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
 
 					// very long very very silly line of code
-					string RenderText = lf.PaddingEnabled ? lf.CenteredByPadding(lf.Options[lf.SelectedOption], lf.Options.MaxBy(o => o.Length).Length + (PaddingAmount * 2)) : lf.Options[lf.SelectedOption];
+					string RenderText = lf.PaddingEnabled ? lf.CenteredByPadding(lf.Options[lf.SelectedOptionIndex], lf.Options.MaxBy(o => o.Length).Length + (PaddingAmount * 2)) : lf.Options[lf.SelectedOptionIndex];
 					// this could easily be an if statement that's kind on the eyes
 					// but that would be too easy
 
@@ -257,6 +269,39 @@ public class ScrollableDataEntry : Widget
                         StyleCode.None);
                     break;
 				}
+
+				case ActionField af:
+				{
+					int RenderX = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
+
+					r.WriteAt(RenderX, Y + CurrentYOff, $"[{af.ButtonText}]");
+					break;
+				}
+
+				case SearchableMenuField smf:
+				{
+					int ThisX = PaddingEnabled ? FieldOffsetAfterText : X + VisibleFields[i].Text.Length + 1;
+					int ThisY = Y + CurrentYOff;
+
+					smf.smMenu.X = ThisX;
+					smf.smMenu.Y = ThisY;
+
+					if (smf.smMenu.Visible)
+					{
+						smf.smMenu.Draw(r);
+
+						// If the menu could potentially overflow to other fields, then return early to prevent those fields from occluding this one
+						// This is an insult to good design, but it works
+						if (smf.smMenu.Height > 1)
+							return;
+					}
+					else
+					{
+						r.WriteAt(ThisX, ThisY, smf.SelectedOption);
+					}
+
+					break;
+				}
 			}
 
 			CurrentYOff++;
@@ -275,12 +320,28 @@ public class ScrollableDataEntry : Widget
 		switch (cki.Key)
 		{
 			case ConsoleKey.UpArrow:
+			{
+				if (CurrentlySelectedField is SearchableMenuField smf && smf.IsSearching)
+				{
+					smf.smMenu.OnInput(cki);
+					break;
+				}
+
 				Previous();
 				break;
+			}
 
 			case ConsoleKey.DownArrow:
+			{
+				if (CurrentlySelectedField is SearchableMenuField smf && smf.IsSearching)
+				{
+					smf.smMenu.OnInput(cki);
+					break;
+				}
+
 				Next();
 				break;
+			}
 
 			case ConsoleKey.Enter:
 				// Field-specific override
@@ -299,6 +360,35 @@ public class ScrollableDataEntry : Widget
 
 						break;
 
+					case SearchableMenuField smf:
+					{
+						if (!smf.IsSearching)
+						{
+							smf.smMenu.Visible = true;
+							smf.IsSearching = true;
+						}
+						else
+						{
+							smf.SelectedOption = smf.smMenu[smf.smMenu.SelectedOption].Text;
+							smf.TryOnUpdate();
+							smf.smMenu.Visible = false;
+							smf.IsSearching = false;
+						}
+						goto skip;
+					}
+
+					case BooleanCheckboxField bcf:
+						if (!AdvanceOnEnter)
+						{
+							bcf.Checked = !bcf.Checked;
+							bcf.TryOnUpdate();
+						}
+						break;
+
+					case ActionField af:
+						if (!AdvanceOnEnter && af.OnEnter is not null)
+							try { af.OnEnter(); } catch (Exception) { }
+						break;
 				}
 
 				if (AdvanceOnEnter)
@@ -342,17 +432,17 @@ public class ScrollableDataEntry : Widget
 						switch (cki.Key)
 						{
 							case ConsoleKey.LeftArrow:
-                                if (lf.SelectedOption == 0)
-                                    lf.SelectedOption = lf.Options.Count - 1;
+                                if (lf.SelectedOptionIndex == 0)
+                                    lf.SelectedOptionIndex = lf.Options.Count - 1;
                                 else
-                                    lf.SelectedOption--;
+                                    lf.SelectedOptionIndex--;
                                 break;
 
 							case ConsoleKey.RightArrow:
-								if (lf.SelectedOption == lf.Options.Count - 1)
-									lf.SelectedOption = 0;
+								if (lf.SelectedOptionIndex == lf.Options.Count - 1)
+									lf.SelectedOptionIndex = 0;
 								else
-									lf.SelectedOption++;
+									lf.SelectedOptionIndex++;
 								break;
 						}
 
@@ -442,6 +532,41 @@ public class ScrollableDataEntry : Widget
 							ccf.Next();
 						else if (cki.Key == ConsoleKey.LeftArrow)
 							ccf.Previous();
+
+						break;
+					}
+
+					case ActionField af:
+					{
+						if (cki.Key == ConsoleKey.Spacebar && af.OnEnter is not null)
+							try { af.OnEnter(); } catch (Exception) { }
+
+						break;
+					}
+
+					case SearchableMenuField smf:
+					{
+						// This field shouldn't do anything if there are no options to choose from
+						if (smf.smMenu.OptionCount == 0)
+							break;
+
+						if (smf.IsSearching)
+						{
+							if (cki.Key == ConsoleKey.Escape)
+							{
+								smf.IsSearching = false;
+								smf.smMenu.Visible = false;
+							}
+							else
+							{
+								smf.smMenu.OnInput(cki);
+							}
+						}
+						else
+						{
+							if (cki.Key == ConsoleKey.Delete)
+								smf.SelectedOption = string.Empty;
+						}
 
 						break;
 					}
