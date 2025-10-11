@@ -213,11 +213,17 @@ public static partial class Hv2
 
 		InputBuffer.TryDequeue(out var cki);
 
-		// Global KeyActions take precedence before focused widgets
+		foreach (var l in LayerStack)
+			if (l.KeyActions.TryGetValue(cki.Key, out var LayerKeyAction))
+			{
+				LayerKeyAction(cki);
+				break;
+			}
 
-		if (GlobalKeyActions.TryGetValue(cki.Key, out var Action))
+		// Global KeyActions take precedence before focused widgets
+		if (GlobalKeyActions.TryGetValue(cki.Key, out var GlobalKeyAction))
 		{
-			Action();
+			GlobalKeyAction();
 		}
 		else if (FocusedWidget is not null)
 		{

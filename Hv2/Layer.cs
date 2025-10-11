@@ -12,6 +12,8 @@ public abstract partial class Layer
 	/// A convenience dictionary provided so the client can easily store map-based state
 	/// </summary>
 	protected PooledDictionary<string, dynamic> State = [];
+
+	public PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> KeyActions = [];
 	
 	public Layer()
 	{ }
