@@ -187,7 +187,7 @@ public class TextBox : Widget
 
 					ScrollbarColor,
 					Color24.Black,
-					StyleCode.None
+					Style.None
 				);
 			}
 

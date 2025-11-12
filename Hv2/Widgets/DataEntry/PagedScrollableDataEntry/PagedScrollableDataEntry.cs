@@ -82,9 +82,9 @@ public class PagedScrollableDataEntry : Widget
 		for (int i = CurrentPage.ScrollY; i < CurrentPage.ScrollY + DrawCount; i++)
 		{
 			if (vf[i] == CurrentlySelectedField)
-				r.WriteAt(X + 1, Y + CurrentYOff, vf[i].Text, SelectedForeground, SelectedBackground, StyleCode.None);
+				r.WriteAt(X + 1, Y + CurrentYOff, vf[i].Text, SelectedForeground, SelectedBackground, Style.None);
 			else
-				r.WriteAt(X + 1, Y + CurrentYOff, vf[i].Text, vf[i].TextForeground, vf[i].TextBackground, StyleCode.None);
+				r.WriteAt(X + 1, Y + CurrentYOff, vf[i].Text, vf[i].TextForeground, vf[i].TextBackground, Style.None);
 
 			// Field-specific rendering
 
@@ -114,7 +114,7 @@ public class PagedScrollableDataEntry : Widget
 						bcf.Checked ? Green : Red,
 						Color24.Black,
 
-						StyleCode.None
+						Style.None
 					);
 					break;
 				}
@@ -124,8 +124,8 @@ public class PagedScrollableDataEntry : Widget
 					int Option1X = PaddingEnabled ? FieldOffsetAfterText : X + vf[i].Text.Length + 1;
 					int Option2X = Option1X + bof.TrueOption.Length + 2;
 
-					r.WriteAt(Option1X, Y + CurrentYOff, bof.TrueOption, Color24.White, Color24.Black, bof.Selected ? bof.SelectedStyle : StyleCode.None);
-					r.WriteAt(Option2X, Y + CurrentYOff, bof.FalseOption, Color24.White, Color24.Black, bof.Selected ? StyleCode.None : bof.SelectedStyle);
+					r.WriteAt(Option1X, Y + CurrentYOff, bof.TrueOption, Color24.White, Color24.Black, bof.Selected ? bof.SelectedStyle : Style.None);
+					r.WriteAt(Option2X, Y + CurrentYOff, bof.FalseOption, Color24.White, Color24.Black, bof.Selected ? Style.None : bof.SelectedStyle);
 					break;
 				}
 
@@ -160,7 +160,7 @@ public class PagedScrollableDataEntry : Widget
                         new Color24(ccf.R, ccf.G, ccf.B),
                         Color24.Black,
 
-						ccf.SelectedIndex == 0 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+						ccf.SelectedIndex == 0 && CurrentlySelectedField == ccf ? Style.Underlined : Style.None);
 
                     // Index 1 (Byte 1 - Red)
                     r.WriteAt(
@@ -176,7 +176,7 @@ public class PagedScrollableDataEntry : Widget
                         Color24.White,
                         Color24.Black,
 
-                        ccf.SelectedIndex == 1 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+                        ccf.SelectedIndex == 1 && CurrentlySelectedField == ccf ? Style.Underlined : Style.None);
 
                     // Index 2 (Byte 2 - Green)
                     r.WriteAt(
@@ -192,7 +192,7 @@ public class PagedScrollableDataEntry : Widget
                         Color24.White,
                         Color24.Black,
 
-                        ccf.SelectedIndex == 2 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+                        ccf.SelectedIndex == 2 && CurrentlySelectedField == ccf ? Style.Underlined : Style.None);
 
                     // Index 3 (Byte 3 - Blue)
                     r.WriteAt(
@@ -208,7 +208,7 @@ public class PagedScrollableDataEntry : Widget
                         Color24.White,
                         Color24.Black,
 
-                        ccf.SelectedIndex == 3 && CurrentlySelectedField == ccf ? StyleCode.Underlined : StyleCode.None);
+                        ccf.SelectedIndex == 3 && CurrentlySelectedField == ccf ? Style.Underlined : Style.None);
 
 					// Color Display
                     r.WriteAt(
@@ -220,7 +220,7 @@ public class PagedScrollableDataEntry : Widget
                         new Color24(ccf.R, ccf.G, ccf.B),
                         Color24.Black,
 
-                        StyleCode.None);
+                        Style.None);
                     break;
 				}
 

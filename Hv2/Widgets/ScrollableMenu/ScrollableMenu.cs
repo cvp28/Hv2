@@ -173,7 +173,7 @@ public class ScrollableMenu : Widget
 				if (i == SelectedOption && DoStyle)
 					DrawStyledOption(X + 1, Y + CurrentYOff, Options[i], r);
 				else
-					r.WriteAt(X + 1, Y + CurrentYOff, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, StyleCode.None);
+					r.WriteAt(X + 1, Y + CurrentYOff, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, Style.None);
 				
 				CurrentYOff++;
 			}
@@ -192,7 +192,7 @@ public class ScrollableMenu : Widget
 			if (i == SelectedOption && DoStyle)
 				DrawStyledOption(CurrentX, Y + CurrentYOff, Options[i], r);
 			else
-				r.WriteAt(CurrentX, Y + CurrentYOff, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, StyleCode.None);
+				r.WriteAt(CurrentX, Y + CurrentYOff, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, Style.None);
 				
 			CurrentYOff++;
 		}
@@ -212,7 +212,7 @@ public class ScrollableMenu : Widget
 					//		RenderContext.VTDrawChar('<');
 					//	});
 						
-					r.WriteAt(X, Y, $"{Option.Text} <", Option.TextForeground, Option.TextBackground, StyleCode.None);
+					r.WriteAt(X, Y, $"{Option.Text} <", Option.TextForeground, Option.TextBackground, Style.None);
 					break;
 				}
 
@@ -223,7 +223,7 @@ public class ScrollableMenu : Widget
 					//	RenderContext.VTDrawText(Option.Text);
 					//	RenderContext.VTRevert();
 						
-					r.WriteAt(X, Y, Option.Text, Option.TextForeground, Option.TextBackground, StyleCode.Inverted);
+					r.WriteAt(X, Y, Option.Text, Option.TextForeground, Option.TextBackground, Style.Inverted);
 					break;
 				}
 		}

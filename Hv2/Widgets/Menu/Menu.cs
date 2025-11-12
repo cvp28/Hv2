@@ -116,7 +116,7 @@ public class Menu : Widget
 					DrawStyledOption(X, Y + i, Options[i]);
 				else
 				{
-					r.WriteAt(X, Y + i, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, StyleCode.None);
+					r.WriteAt(X, Y + i, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, Style.None);
 
 					//	RenderContext.VTSetCursorPosition(X, Y + i);
 					//	RenderContext.VTEnterColorContext(Options[i].TextForeground, Options[i].TextBackground, delegate ()
@@ -139,7 +139,7 @@ public class Menu : Widget
 					DrawStyledOption(CurrentX, Y + i, Options[i]);
 				else
 				{
-					r.WriteAt(CurrentX, Y + i, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, StyleCode.None);
+					r.WriteAt(CurrentX, Y + i, Options[i].Text, Options[i].TextForeground, Options[i].TextBackground, Style.None);
 
 					//	RenderContext.VTSetCursorPosition(CurrentX, Y + i);
 					//	RenderContext.VTEnterColorContext(Options[i].TextForeground, Options[i].TextBackground, delegate ()
@@ -156,7 +156,7 @@ public class Menu : Widget
 			{
 				case MenuStyle.Arrow:
 					{
-						r.WriteAt(X, Y, $"{Option.Text} <", Option.TextForeground, Option.TextBackground, StyleCode.None);
+						r.WriteAt(X, Y, $"{Option.Text} <", Option.TextForeground, Option.TextBackground, Style.None);
 
 						//	RenderContext.VTSetCursorPosition(X, Y);
 						//	RenderContext.VTEnterColorContext(Option.TextForeground, Option.TextBackground, delegate ()
@@ -170,7 +170,7 @@ public class Menu : Widget
 
 				case MenuStyle.Highlighted:
 					{
-						r.WriteAt(X, Y, Option.Text, Option.TextForeground, Option.TextBackground, StyleCode.Inverted);
+						r.WriteAt(X, Y, Option.Text, Option.TextForeground, Option.TextBackground, Style.Inverted);
 
 						//	RenderContext.VTSetCursorPosition(X, Y);
 						//	RenderContext.VTInvert();

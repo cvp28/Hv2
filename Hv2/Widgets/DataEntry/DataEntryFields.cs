@@ -130,12 +130,12 @@ public class BooleanOptionField : DataEntryField
     /// </summary>
     public bool Selected;
 
-    public StyleCode SelectedStyle;
+    public Style SelectedStyle;
 
     public BooleanOptionField()
     { }
 
-    public BooleanOptionField(string Text, string TrueOption, string FalseOption, StyleCode SelectedStyle = StyleCode.Underlined, bool Selected = true)
+    public BooleanOptionField(string Text, string TrueOption, string FalseOption, Style SelectedStyle = Style.Underlined, bool Selected = true)
     {
         base.Text = Text;
         this.TrueOption = TrueOption;

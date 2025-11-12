@@ -12,14 +12,14 @@ public class Label : Widget
 	public Color24 Foreground { get; set;}
 	public Color24 Background { get; set; }
 	
-	public StyleCode Style { get; set; }
+	public Style Style { get; set; }
 
 	#region Constructors
-	public Label() : this(0, 0, "", Color24.White, Color24.Black, StyleCode.None) { }
-	public Label(int X, int Y, string Text) : this(X, Y, Text, Color24.White, Color24.Black, StyleCode.None) { }
-	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background) : this(X, Y, Text, Foreground, Background, StyleCode.None) { }
+	public Label() : this(0, 0, "", Color24.White, Color24.Black, Style.None) { }
+	public Label(int X, int Y, string Text) : this(X, Y, Text, Color24.White, Color24.Black, Style.None) { }
+	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background) : this(X, Y, Text, Foreground, Background, Style.None) { }
 
-	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background, StyleCode Style)
+	public Label(int X, int Y, string Text, Color24 Foreground, Color24 Background, Style Style)
 	{
 		this.X = X;
 		this.Y = Y;

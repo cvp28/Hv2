@@ -116,23 +116,23 @@ public partial class InputField : Widget
 		r.WriteAt(X, Y, Prompt);
 
 		if (Buffer.Length == 0 && EmptyMessage is not null && EmptyMessage.Length > 0)
-			r.WriteAt(X + Prompt.Length, Y, EmptyMessage, EmptyMessageForeground, EmptyMessageBackground, StyleCode.None);
+			r.WriteAt(X + Prompt.Length, Y, EmptyMessage, EmptyMessageForeground, EmptyMessageBackground, Style.None);
 
 		// Draw buffer using tokens from tokenizer
 		foreach (var Token in CurrentTokens)
 		{
 			var (TokenX, TokenY) = Hv2.GetCoordsFromOffsetEx(X + Prompt.Length, Y, Token.StartIndex);
-			r.WriteAt(TokenX, TokenY, Token.RawContent, Token.HighlightForeground, Token.HighlightBackground, StyleCode.None);
+			r.WriteAt(TokenX, TokenY, Token.RawContent, Token.HighlightForeground, Token.HighlightBackground, Style.None);
 		}
 
 		if (CursorVisible && InternalDrawCursor)
 		{
 			if (Buffer.Length > 0 && CurrentBufferIndex != Buffer.Length)
-				r.WriteAt(CursorX, CursorY, $"{Buffer[CurrentBufferIndex]}", CursorForeground, CursorBackground, StyleCode.None);
+				r.WriteAt(CursorX, CursorY, $"{Buffer[CurrentBufferIndex]}", CursorForeground, CursorBackground, Style.None);
 			else if (Buffer.Length == 0 && EmptyMessage is not null && EmptyMessage.Length > 0)
-				r.WriteAt(CursorX, CursorY, EmptyMessage[0], CursorForeground, CursorBackground, StyleCode.None);
+				r.WriteAt(CursorX, CursorY, EmptyMessage[0], CursorForeground, CursorBackground, Style.None);
 			else
-				r.WriteAt(CursorX, CursorY, ' ', CursorForeground, CursorBackground, StyleCode.None);
+				r.WriteAt(CursorX, CursorY, ' ', CursorForeground, CursorBackground, Style.None);
 		}
 	}
 
