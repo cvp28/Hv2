@@ -116,7 +116,7 @@ public class TextBox : Widget
 		ScreenBuffer = new(ScreenBufferSize);
 
 		// Initalize ModifyHistory
-		ModifyHistory = new(1000);      // Arbitrary 1000 count before resizing - I figure that's a good amount of modifications to have before resizing I guess
+		ModifyHistory = new(250);      // Arbitrary 1000 count before resizing - I figure that's a good amount of modifications to have before resizing I guess
 
 		// Clear the main screen buffer
 		Clear();
