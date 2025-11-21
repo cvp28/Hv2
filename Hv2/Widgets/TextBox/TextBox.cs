@@ -80,7 +80,14 @@ public class TextBox : Widget
 	private int ScrollbackLines;
 
 	private List<Pixel> ScreenBuffer;
-	private List<Pixel> ClearBuffer;
+
+	private static Pixel BlankCharacter = new()
+	{
+		Character = ' ',
+		Foreground = Color24.White,
+		Background = Color24.Black,
+		Style = 0
+	};
 
 	private List<TextBoxModifyAction> ModifyHistory;
 
@@ -91,14 +98,6 @@ public class TextBox : Widget
 	private bool DoLogging;
 	private FileStream LogStream;
 	private StreamWriter LogStreamWriter;
-
-	private static Pixel BlankCharacter = new()
-	{
-		Character = ' ',
-		Foreground = Color24.White,
-		Background = Color24.Black,
-		Style = 0
-	};
 
 	private readonly object ScreenBufferLock = new();
 	private Stopwatch CursorTimer = new();
@@ -115,13 +114,9 @@ public class TextBox : Widget
 		// Create screen buffer with maximum amount of memory reserved but it will rarely ever actually be this size
 		// Should make indexes easier to work with and translate between the widget and the renderer
 		ScreenBuffer = new(ScreenBufferSize);
-		ClearBuffer = new(ScreenBufferSize);
 
 		// Initalize ModifyHistory
 		ModifyHistory = new(1000);      // Arbitrary 1000 count before resizing - I figure that's a good amount of modifications to have before resizing I guess
-
-		// Set up the clear buffer
-		InitializeClearBuffer();
 
 		// Clear the main screen buffer
 		Clear();
@@ -203,15 +198,6 @@ public class TextBox : Widget
 
 	private double Remap(double value, double from1, double to1, double from2, double to2) => (value - from1) / (to1 - from1) * (to2 - from2) + from2;
 
-	private void InitializeClearBuffer()
-	{
-		ClearBuffer.Clear();
-
-		// Set up clear buffer
-		for (int i = 0; i < TotalCells; i++)
-			ClearBuffer.Add(BlankCharacter);
-	}
-
 	// Can be used to manually override the blinking cursor and ensure that the cursor is visible at any given moment
 	public void EnsureCursorVisible()
 	{
@@ -228,10 +214,20 @@ public class TextBox : Widget
 			CursorX = 0;
 			CursorY = 0;
 
-			ScreenBuffer.Clear();
-			ScreenBuffer.AddRange(ClearBuffer);
+			ClearScreenBuffer();
 
 			ModifyHistory.Clear();
+		}
+	}
+
+	private void ClearScreenBuffer()
+	{
+		lock (ScreenBufferLock)
+		{
+			ScreenBuffer.Clear();
+
+			for (int i = 0; i < TotalCells; i++)
+				ScreenBuffer.Add(BlankCharacter);
 		}
 	}
 
@@ -253,12 +249,8 @@ public class TextBox : Widget
 			this.Width = Width;
 			this.Height = Height;
 
-			// Re-initialize the clear buffer so its size is consistent
-			InitializeClearBuffer();
-
 			// Clear screen buffer
-			ScreenBuffer.Clear();
-			ScreenBuffer.AddRange(ClearBuffer);
+			ClearScreenBuffer();
 
 			OmitCursorHistoryEntries = true;
 

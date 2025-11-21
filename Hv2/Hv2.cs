@@ -14,7 +14,7 @@ public static partial class Hv2
 	public static int WindowHeight { get; private set; }
 
 	public static Renderer CosmoRenderer;
-	private static PooledList<Layer> LayerStack;
+	public static readonly PooledDictionary<string, Layer> Layers = [];
 
 	private static Widget _FocusedWidget;
 
@@ -49,8 +49,6 @@ public static partial class Hv2
     /// </summary>
     public static bool FrameRateLimiterEnabled { get; set; }
 
-	private static SleepState MainLoopSleepState;
-
 	private static TimeSpan MainLoopElapsed;			// Measures MainLoop execution time
 	private static TimeSpan FrameRateLimiterElapsed;	// Measures time spent sleeping (if FrameRateLimiter is enabled)
 
@@ -66,7 +64,6 @@ public static partial class Hv2
 			throw new Exception("Hv2 is already initialized.");
 
 		CosmoRenderer = new();
-		LayerStack = new();
 		GlobalKeyActions = new();
 
 		WindowWidth = Console.WindowWidth;
@@ -89,7 +86,6 @@ public static partial class Hv2
 		LastFPS = 0;
 		CurrentFPS = 0;
 
-		MainLoopSleepState = new();
 		MainLoopElapsed = TimeSpan.Zero;
 		FrameRateLimiterEnabled = LimitFrameRate;
 
@@ -169,14 +165,14 @@ public static partial class Hv2
                 Console.CursorVisible = false;
 
                 // Blocks until dimensions are stable for at least a second
-                //ResizeRoutine();
+                ResizeRoutine();
             }
 
             // Do input
             HandleInput();
 
 			// Do rendering
-			RenderLayers(LayerStack);
+			RenderLayers(Layers);
 
 			// Render current status message if set (label being visible means the message should be set)
 			if (lblCurrentStatusMessage.Visible)
@@ -213,8 +209,8 @@ public static partial class Hv2
 
 		InputBuffer.TryDequeue(out var cki);
 
-		foreach (var l in LayerStack)
-			if (l.KeyActions.TryGetValue(cki.Key, out var LayerKeyAction))
+		foreach (var l in Layers)
+			if (l.Value.Active && l.Value.KeyActions.TryGetValue(cki.Key, out var LayerKeyAction))
 			{
 				LayerKeyAction(cki);
 				break;
@@ -231,11 +227,15 @@ public static partial class Hv2
 		}
 	}
 
-	private static void RenderLayers(IEnumerable<Layer> Layers)
+	private static void RenderLayers(IDictionary<string, Layer> Layers)
 	{
+		// I wish I had a way to go down
+		// The humble staircase:
+
 		foreach (var l in Layers)
-			foreach (var w in l.Widgets)
-				if (w.Visible) w.Draw(CosmoRenderer);
+			if (l.Value.Active)
+				foreach (var w in l.Value.Widgets)
+					if (w.Visible) w.Draw(CosmoRenderer);
 
 		CosmoRenderer.Flush();
 	}
@@ -293,61 +293,6 @@ public static partial class Hv2
 			// empty for now :P
         };
 
-	private static void Sleep(TimeSpan Time, ref SleepState s)
-	{
-		double RemainingSeconds = Time.TotalSeconds;
-        TimeSpan observed;
-        int powersaving_count = 0;
-
-        // Power saving section
-        var powersaving_time_start = Stopwatch.GetTimestamp();
-        PlatformEnableHighResolutionTiming();
-
-        do
-        {
-            var start = Stopwatch.GetTimestamp();
-            Thread.Sleep(1);
-            observed = Stopwatch.GetElapsedTime(start);
-
-            RemainingSeconds -= observed.TotalSeconds;
-
-            s.estimate = UpdateEstimate(observed, ref s);
-
-            powersaving_count++;
-        }
-        while (RemainingSeconds > s.estimate);
-
-        PlatformDisableHighResolutionTiming();
-        var powersaving_time = Stopwatch.GetElapsedTime(powersaving_time_start);
-		PowerSavingSleep = powersaving_time;
-
-        // Spin lock section
-        var spinlock_time_start = Stopwatch.GetTimestamp();
-
-        int spinlock_count = 0;
-        var spin_lock_start = Stopwatch.GetTimestamp();
-        while (Stopwatch.GetElapsedTime(spin_lock_start).TotalSeconds < RemainingSeconds) spinlock_count++;
-
-        var spinlock_time = Stopwatch.GetElapsedTime(spinlock_time_start);
-		SpinLockSleep = spinlock_time;
-
-        var total_sleep_time = powersaving_time.TotalSeconds + spinlock_time.TotalSeconds;
-    }
-
-	public static TimeSpan PowerSavingSleep;
-	public static TimeSpan SpinLockSleep;
-
-    // local helper function (thank you https://blog.bearcats.nl/accurate-sleep-function/)
-    private static double UpdateEstimate(TimeSpan observed, ref SleepState s)
-    {
-        double delta = observed.TotalSeconds - s.mean;
-        s.count++;
-        s.mean += delta / s.count;
-        s.m2 += delta * (observed.TotalSeconds - s.mean);
-        double stddev = Math.Sqrt(s.m2 / (s.count - 1));
-        return s.mean + stddev;
-    }
-	
 	/// <summary>
 	/// Blocking call. Executes the current application.
 	/// </summary>
@@ -365,104 +310,6 @@ public static partial class Hv2
         MainLoop();
 	}
 	
-	#region Layer Controls
-	public static void AddLayerFront<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(params object[] Args) where T : Layer
-    {
-        ThrowIfNotInitialized();
-
-        Layer l = Args.Length == 0 ?
-            Activator.CreateInstance<T>()
-            :
-            Activator.CreateInstance(typeof(T), Args) as T;
-		
-        l.OnAttachInternal();
-		l.OnShow();
-		
-		LayerStack.Add(l);
-	}
-	
-	public static void AddLayerBack<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(params object[] Args) where T : Layer
-    {
-        ThrowIfNotInitialized();
-
-		Layer l = Args.Length == 0 ? 
-			Activator.CreateInstance<T>()
-			: 
-			Activator.CreateInstance(typeof(T), Args) as T;
-
-		l.OnAttachInternal();
-		l.OnShow();
-		
-		LayerStack.Insert(0, l);
-	}
-	
-	public static void RemoveLayerFront()
-    {
-        ThrowIfNotInitialized();
-
-        if (!LayerStack.Any()) return;
-
-		LayerStack[^1].OnHide();
-		LayerStack.RemoveAt(LayerStack.Count - 1);
-	}
-	
-	public static void RemoveLayerBack()
-    {
-        ThrowIfNotInitialized();
-
-        if (!LayerStack.Any()) return;
-
-		LayerStack[0].OnHide();
-		LayerStack.RemoveAt(0);
-	}
-
-	public static bool RemoveLayerByType<T>() where T : Layer
-	{
-		ThrowIfNotInitialized();
-
-		var layer = GetLayerByType<T>();
-
-		return LayerStack.Remove(layer);
-	}
-
-	public static bool ReplaceLayerByType<T, U>(params object[] Args) where T : Layer where U : Layer
-    {
-        ThrowIfNotInitialized();
-
-		var layer = GetLayerByType<T>();
-
-		if (!layer) return false;
-
-		var index = LayerStack.IndexOf(layer);
-
-        Layer new_layer = Args.Length == 0 ?
-            Activator.CreateInstance<U>()
-            :
-            Activator.CreateInstance(typeof(U), Args) as U;
-
-        new_layer.OnAttachInternal();
-        new_layer.OnShow();
-
-		LayerStack.Insert(index, new_layer);		// Insert new layer
-		LayerStack.RemoveAt(index + 1);				// Remove old layer (which will have been bumped up by one index at this point)
-
-		return true;
-	}
-
-	public static Maybe<T> GetLayerByType<T>() where T : Layer
-    {
-        ThrowIfNotInitialized();
-
-        var temp = LayerStack.FirstOrDefault(l => l.GetType().IsAssignableTo(typeof(T)));
-		
-		if (temp is null)
-			return Maybe<T>.Fail();
-		
-		return Maybe<T>.Success(temp as T);
-	}
-	
-	#endregion
-	
 	public static void SignalExit()
 	{
 		ThrowIfNotInitialized();
@@ -470,20 +317,4 @@ public static partial class Hv2
 		Running = false;
 		FPSIntervalTimer.Stop();
 	}
-}
-
-struct SleepState
-{
-    public double estimate = 0.001;
-
-    public double mean = 0.001;
-
-    public double m2 = 0;
-
-    public long count = 1;
-
-    public SleepState()
-    { }
-
-    public static SleepState Default = new();
 }

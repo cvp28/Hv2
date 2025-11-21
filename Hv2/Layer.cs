@@ -6,6 +6,24 @@ namespace Hv2UI;
 
 public abstract partial class Layer
 {
+	public bool Active
+	{
+		get => field;
+		set
+		{
+			field = value;
+
+			if (value)
+			{
+				OnShow();
+			}
+			else
+			{
+				OnHide();
+			}
+		}
+	}
+
 	internal PooledList<Widget> Widgets = [];
 	
 	/// <summary>
@@ -15,23 +33,18 @@ public abstract partial class Layer
 
 	public PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> KeyActions = [];
 	
-	public Layer()
-	{ }
+	public Layer(bool Active = false)
+	{ 
+		this.Active = Active;
+	}
 	
-	// Called when the layer gets added to Hv2
-	// We wait until then because the widgets are all almost certainly going to be initialized by then
-	internal void OnAttachInternal()
+	public void AddWidgetsInternal()
 	{
 		var fields = GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(p => p.IsDefined(typeof(WidgetAttribute))).ToArray();
 		
 		foreach (var field in fields)
 			Widgets.Add(field.GetValue(this) as Widget);
-		
-		OnAttach();
 	}
-
-	public virtual void OnAttach()
-	{ }
 	
 	public virtual void OnShow()
 	{ }
