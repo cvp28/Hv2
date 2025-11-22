@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 using Cosmo;
 
@@ -187,15 +186,17 @@ public static partial class Hv2
 
 			if (FrameRateLimiterEnabled) // TODO (Carson): Somehow make this better
             {
-				// Hardcoded 60 FPS limit for now
-				var sleep_time = TimeSpan.FromSeconds(1.0 / 60) - MainLoopElapsed;
+				Thread.Sleep(10);
 
-				if (sleep_time.Milliseconds > 0)
-				{
-					PlatformEnableHighResolutionTiming();
-					Thread.Sleep((int)Math.Floor(sleep_time.TotalMilliseconds));
-					PlatformDisableHighResolutionTiming();
-				}
+				//	// Hardcoded 60 FPS limit for now
+				//	var sleep_time = TimeSpan.FromSeconds(1.0 / 60) - MainLoopElapsed;
+				//	
+				//	if (sleep_time.Milliseconds > 0)
+				//	{
+				//		PlatformEnableHighResolutionTiming();
+				//		Thread.Sleep((int)Math.Floor(sleep_time.TotalMilliseconds));
+				//		PlatformDisableHighResolutionTiming();
+				//	}
 			}
 
 			FrameRateLimiterElapsed = Stopwatch.GetElapsedTime(FrameRateLimiterStartTicks);

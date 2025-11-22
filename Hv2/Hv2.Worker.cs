@@ -8,7 +8,7 @@ public static partial class Hv2
 {
 	private static Thread Hv2Worker;
 	
-	private static ConcurrentQueue<ConsoleKeyInfo> InputBuffer;
+	internal static ConcurrentQueue<ConsoleKeyInfo> InputBuffer;
 	
 	private static void Hv2WorkerProc()
 	{

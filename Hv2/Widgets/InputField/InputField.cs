@@ -392,37 +392,7 @@ public partial class InputField : Widget
 				break;
 
 			default:
-				char c = cki.KeyChar;
-				bool Valid = false;
-
-				switch (Filter)
-				{
-					case InputFilter.None:
-						Valid = char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsWhiteSpace(c) || char.IsSymbol(c);
-						break;
-
-					case InputFilter.Numerics:
-						Valid = char.IsDigit(c);
-						break;
-
-					case InputFilter.NumericsWithDots:
-						Valid = char.IsDigit(c) || c == '.';
-						break;
-
-					case InputFilter.NumericsWithSingleDot:
-						if (Buffer.ToString().Contains('.'))
-							Valid = char.IsDigit(c);
-						else
-							Valid = char.IsDigit(c) || c == '.';
-
-						break;
-				}
-
-				if (!Valid)
-					break;
-
-				Buffer.Insert(CurrentBufferIndex, c);
-				CurrentBufferIndex++;
+				InsertChar(cki.KeyChar);
 				break;
 		}
 
@@ -491,6 +461,40 @@ public partial class InputField : Widget
 		// Perform syntax highlighting via user-set rules if enabled
 		if (HighlightingEnabled && OnHighlight is not null)
 			OnHighlight(CurrentTokens);
+	}
+
+	private void InsertChar(char c)
+	{
+		bool Valid = false;
+
+		switch (Filter)
+		{
+			case InputFilter.None:
+				Valid = char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsWhiteSpace(c) || char.IsSymbol(c);
+				break;
+
+			case InputFilter.Numerics:
+				Valid = char.IsDigit(c);
+				break;
+
+			case InputFilter.NumericsWithDots:
+				Valid = char.IsDigit(c) || c == '.';
+				break;
+
+			case InputFilter.NumericsWithSingleDot:
+				if (Buffer.ToString().Contains('.'))
+					Valid = char.IsDigit(c);
+				else
+					Valid = char.IsDigit(c) || c == '.';
+
+				break;
+		}
+
+		if (!Valid)
+			return;
+
+		Buffer.Insert(CurrentBufferIndex, c);
+		CurrentBufferIndex++;
 	}
 
 	private Task<string> ReadLineTask = null;

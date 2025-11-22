@@ -20,7 +20,7 @@
   
   <ItemGroup>
     <Reference Include="Cosmo">
-      <HintPath>..\..\Cosmo\Cosmo\bin\Debug\net8.0\Cosmo.dll</HintPath>
+      <HintPath>..\..\Cosmo\Cosmo\bin\Release\net10.0\Cosmo.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

@@ -91,7 +91,7 @@ public class TextBox : Widget
 
 	private List<TextBoxModifyAction> ModifyHistory;
 
-	private int ScreenBufferSize => Console.LargestWindowWidth * (Console.LargestWindowHeight + ScrollbackLines);
+	private int ScreenBufferSize => Width * (Height + ScrollbackLines);
 
 	private int ViewY;
 
