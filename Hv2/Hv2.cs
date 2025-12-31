@@ -33,7 +33,7 @@ public static partial class Hv2
 		}
 	}
 
-	public static PooledDictionary<ConsoleKey, Action> GlobalKeyActions;
+	public static PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> GlobalKeyActions;
 
 	private static bool Running = false;
 
@@ -220,7 +220,7 @@ public static partial class Hv2
 		// Global KeyActions take precedence before focused widgets
 		if (GlobalKeyActions.TryGetValue(cki.Key, out var GlobalKeyAction))
 		{
-			GlobalKeyAction();
+			GlobalKeyAction(cki);
 		}
 		else if (FocusedWidget is not null)
 		{
@@ -317,5 +317,12 @@ public static partial class Hv2
 		
 		Running = false;
 		FPSIntervalTimer.Stop();
+	}
+
+	public static void RefreshRenderer()
+	{
+		ThrowIfNotInitialized();
+
+		CosmoRenderer.Refresh();
 	}
 }

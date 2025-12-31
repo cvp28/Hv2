@@ -415,15 +415,17 @@ public class ScrollableDataEntry : Widget
 					case BooleanCheckboxField bcf:
                         bcf.Checked = cki.Key switch
                         {
-                            ConsoleKey.LeftArrow or ConsoleKey.RightArrow or ConsoleKey.Spacebar => !bcf.Checked
-                        };
+                            ConsoleKey.LeftArrow or ConsoleKey.RightArrow or ConsoleKey.Spacebar => !bcf.Checked,
+							_ => bcf.Checked
+						};
                         bcf.TryOnUpdate();
 						break;
 
 					case BooleanOptionField bof:
 						bof.Selected = cki.Key switch
 						{
-							ConsoleKey.LeftArrow or ConsoleKey.RightArrow or ConsoleKey.Spacebar => !bof.Selected
+							ConsoleKey.LeftArrow or ConsoleKey.RightArrow or ConsoleKey.Spacebar => !bof.Selected,
+							_ => bof.Selected
 						};
 						bof.TryOnUpdate();
 						break;
@@ -571,6 +573,21 @@ public class ScrollableDataEntry : Widget
 						break;
 					}
 				}
+				break;
+		}
+	}
+
+	public void SelectFirstField()
+	{
+		SelectedFieldIndex = 0;
+
+		if (OnSelectionChange is not null)
+			OnSelectionChange(CurrentlySelectedField.ID, CurrentlySelectedField);
+
+		switch (CurrentlySelectedField)
+		{
+			case TextField tf:
+				tf.defInputField.EnsureCursorVisible();
 				break;
 		}
 	}
