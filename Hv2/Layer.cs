@@ -31,7 +31,7 @@ public abstract partial class Layer
 	/// </summary>
 	protected PooledDictionary<string, dynamic> State = [];
 
-	public PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> KeyActions = [];
+	public PooledDictionary<Keybind, Action<ConsoleKeyInfo>> KeyActions = [];
 	
 	public Layer(bool Active = false)
 	{ 
