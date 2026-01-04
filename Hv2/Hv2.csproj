@@ -13,14 +13,17 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Collections.Pooled" Version="1.0.82" />
-    <PackageReference Include="FuzzySharp" Version="2.0.2" />
-    <PackageReference Include="Utf8StringInterpolation" Version="1.3.2" />
-  </ItemGroup>
-  
-  <ItemGroup>
+    <Reference Include="Collections.Pooled">
+      <HintPath>Binaries\Collections.Pooled.dll</HintPath>
+    </Reference>
     <Reference Include="Cosmo">
-      <HintPath>..\..\Cosmo\Cosmo\bin\Release\net10.0\Cosmo.dll</HintPath>
+      <HintPath>Binaries\Cosmo.dll</HintPath>
+    </Reference>
+    <Reference Include="FuzzySharp">
+      <HintPath>Binaries\FuzzySharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Utf8StringInterpolation">
+      <HintPath>Binaries\Utf8StringInterpolation.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
