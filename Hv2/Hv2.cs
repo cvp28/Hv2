@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿global using Keybind = (System.ConsoleKey Key, System.ConsoleModifiers Modifiers);
+
+using System.Text;
 using System.Diagnostics;
 
 using Cosmo;
@@ -33,8 +35,7 @@ public static partial class Hv2
 		}
 	}
 
-	public static PooledDictionary<ConsoleKey, Action<ConsoleKeyInfo>> GlobalKeyActions;
-	public static List<Action<ConsoleKeyInfo>> InputHooks;
+	public static PooledDictionary<Keybind, Action<ConsoleKeyInfo>> GlobalKeyActions;
 
 	private static bool Running = false;
 
@@ -64,9 +65,7 @@ public static partial class Hv2
 			throw new Exception("Hv2 is already initialized.");
 
 		CosmoRenderer = new();
-
-		GlobalKeyActions = [];
-		InputHooks = [];
+		GlobalKeyActions = new();
 
 		WindowWidth = Console.WindowWidth;
 		WindowHeight = Console.WindowHeight;
@@ -213,19 +212,15 @@ public static partial class Hv2
 
 		InputBuffer.TryDequeue(out var cki);
 
-		if (InputHooks.Any())
-			foreach (var hook in InputHooks)
-				hook(cki);
-
 		foreach (var l in Layers)
-			if (l.Value.Active && l.Value.KeyActions.TryGetValue(cki.Key, out var LayerKeyAction))
+			if (l.Value.Active && l.Value.KeyActions.TryGetValue((cki.Key, cki.Modifiers), out var LayerKeyAction))
 			{
 				LayerKeyAction(cki);
 				break;
 			}
 
 		// Global KeyActions take precedence before focused widgets
-		if (GlobalKeyActions.TryGetValue(cki.Key, out var GlobalKeyAction))
+		if (GlobalKeyActions.TryGetValue((cki.Key, cki.Modifiers), out var GlobalKeyAction))
 		{
 			GlobalKeyAction(cki);
 		}
@@ -329,7 +324,7 @@ public static partial class Hv2
 	public static void RefreshRenderer()
 	{
 		ThrowIfNotInitialized();
-		
+
 		CosmoRenderer.Refresh();
 	}
 }
